@@ -27,7 +27,7 @@ export default function AddBillForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
       const formData = new FormData();
       formData.append('date', billData.date);
@@ -35,19 +35,20 @@ export default function AddBillForm() {
       formData.append('amount', billData.amount);
       formData.append('type', billData.type);
       formData.append('description', billData.description);
-      formData.append('userId', user?.publicMetadata?.id);  // Assuming you have `user` from Clerk
+      formData.append('userId', user?.publicMetadata?.id);
       if (billData.photo) {
         formData.append('photo', billData.photo);
       }
-
-      const response = await fetch('http://localhost:3000/api/upload-bill', {
+  
+      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/upload-bill', {
         method: 'POST',
         body: formData,
       });
-
+  
       const result = await response.json();
-
-      if (result.success) {
+      console.log(result);  // Log the result to debug
+  
+      if (response.ok) {
         alert('Bill uploaded successfully!');
         setBillData({
           date: '',
@@ -57,15 +58,17 @@ export default function AddBillForm() {
           description: '',
           photo: null,
         });
+        setImagePreview(null);
       } else {
-        alert('Failed to upload bill');
+        alert('Failed to upload bill: ' + (result.message || 'Unknown error'));
       }
-
+  
     } catch (error) {
-      console.error(error);
-      alert('Something went wrong');
+      console.error('Error during upload:', error);
+      alert('Something went wrong. Please try again later.');
     }
   };
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg max-w-lg mx-auto">
