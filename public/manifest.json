@@ -1,6 +1,6 @@
 {
-  "short_name": "NFC SongDeck",
-  "name": "NFC SongDeck",
+  "short_name": "NFC Bill Tracker",
+  "name": "NFC Bill Tracker",
   "icons": [
     {
       "src": "nfc.png",
