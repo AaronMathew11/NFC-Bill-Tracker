@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
+import Compressor from 'compressorjs';  // Import compressorjs
 
 export default function AddBillForm() {
   const { user } = useUser();  // Using Clerk's user hook to get the user data
@@ -21,13 +22,24 @@ export default function AddBillForm() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setBillData((prev) => ({ ...prev, photo: file }));
+      // Compress the image using Compressor.js
+      new Compressor(file, {
+        quality: 0.6,  // Adjust the quality (0 to 1)
+        maxWidth: 1024,  // Set maximum width
+        maxHeight: 1024, // Set maximum height
+        success(result) {
+          setBillData((prev) => ({ ...prev, photo: result }));
+        },
+        error(err) {
+          console.error('Image compression failed:', err);
+        },
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       const formData = new FormData();
       formData.append('date', billData.date);
@@ -39,15 +51,15 @@ export default function AddBillForm() {
       if (billData.photo) {
         formData.append('photo', billData.photo);
       }
-  
+
       const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/upload-bill', {
         method: 'POST',
         body: formData,
       });
-  
+
       const result = await response.json();
       console.log(result);  // Log the result to debug
-  
+
       if (response.ok) {
         alert('Bill uploaded successfully!');
         setBillData({
@@ -58,17 +70,15 @@ export default function AddBillForm() {
           description: '',
           photo: null,
         });
-        setImagePreview(null);
       } else {
         alert('Failed to upload bill: ' + (result.message || 'Unknown error'));
       }
-  
+
     } catch (error) {
       console.error('Error during upload:', error);
       alert('Something went wrong. Please try again later.');
     }
   };
-  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg max-w-lg mx-auto">

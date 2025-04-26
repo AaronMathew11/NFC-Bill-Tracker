@@ -12,6 +12,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
+    "compressorjs": "^1.2.1",
     "firebase": "^11.6.1",
     "lucide-react": "^0.503.0",
     "moment": "^2.30.1",
