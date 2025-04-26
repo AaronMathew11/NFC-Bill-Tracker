@@ -8,12 +8,12 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export default function Overview() {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [balance, setBalance] = useState(30000); // 🎯 Initial balance is 30000
+  const [balance, setBalance] = useState(25131); // 🎯 Initial balance is 30000
 
   useEffect(() => {
     async function fetchStatistics() {
       try {
-        const response = await fetch('http://localhost:3000/api/all-bills');
+        const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/all-bills');
         const data = await response.json();
         if (data.success) {
           const bills = data.bills;

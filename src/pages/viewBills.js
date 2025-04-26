@@ -118,7 +118,7 @@ export default function ViewBills() {
   // Approve Bill Handler
   async function handleApprove(billId) {
     try {
-      const response = await fetch(`http://localhost:3000/api/update-bill-status/${billId}`, {
+      const response = await fetch(`https://nfc-bill-tracker-backend.onrender.com/api/update-bill-status/${billId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'approved' }),
         headers: { 'Content-Type': 'application/json' },

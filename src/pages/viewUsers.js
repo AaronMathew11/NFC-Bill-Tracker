@@ -5,7 +5,7 @@ export default function ViewUsers() {
 
   useEffect(() => {
     // Simulate fetching the list of users
-    fetch('http://localhost:3000/api/users') // Adjust this URL to match your backend API
+    fetch('https://nfc-bill-tracker-backend.onrender.com/api/users') // Adjust this URL to match your backend API
       .then((res) => res.json())
       .then((data) => setUsers(data.users))
       .catch((err) => console.error('Error fetching users:', err));

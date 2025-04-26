@@ -15,7 +15,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (activePage === 'view' || activePage === 'home') {
-      fetch(`http://localhost:3000/api/user-bills/${user?.publicMetadata?.id}`)
+      fetch(`https://nfc-bill-tracker-backend.onrender.com/api/user-bills/${user?.publicMetadata?.id}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
