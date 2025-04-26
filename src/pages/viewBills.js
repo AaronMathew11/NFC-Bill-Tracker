@@ -7,7 +7,7 @@ export default function ViewBills() {
   useEffect(() => {
     async function fetchBills() {
       try {
-        const response = await fetch('http://localhost:3000/api/all-bills');
+        const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/all-bills');
         const data = await response.json();
 
         if (data.success) {
@@ -140,7 +140,7 @@ export default function ViewBills() {
   // Decline Bill Handler
   async function handleDecline(billId) {
     try {
-      const response = await fetch(`http://localhost:3000/api/update-bill-status/${billId}`, {
+      const response = await fetch(`https://nfc-bill-tracker-backend.onrender.com/api/update-bill-status/${billId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status: 'rejected' }),
         headers: { 'Content-Type': 'application/json' },
