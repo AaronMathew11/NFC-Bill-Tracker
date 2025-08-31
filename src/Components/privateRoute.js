@@ -1,14 +1,14 @@
-import { useUser } from '@clerk/clerk-react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function PrivateRoute({ children, adminOnly }) {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, user } = useAuth();
 
   if (!isSignedIn) {
     return <Navigate to="/login" replace />;
   }
 
-  const role = user?.publicMetadata?.role || "user"; // default role
+  const role = user?.publicMetadata?.role || "user";
 
   if (adminOnly && role !== "admin") {
     return <Navigate to="/user" replace />;

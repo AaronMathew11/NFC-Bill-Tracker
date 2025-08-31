@@ -2,100 +2,84 @@ import React, { useState } from 'react';
 import ViewBills from './viewBills';
 import ViewUsers from './viewUsers';
 import Overview from './overview';
-import { Menu, X } from 'lucide-react';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import DirectPaymentForm from '../Components/DirectPaymentForm';
+import EventLogs from './eventLogs';
+import Ledger from './ledger';
+import { BarChart3, FileText, Users, CreditCard, Activity, Book, User } from 'lucide-react';
+import { useClerk } from '@clerk/clerk-react';
+import { useDevMode } from '../contexts/DevModeContext';
 
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut } = useClerk();
+  const { signOut: clerkSignOut } = useClerk();
+  const { signOut: devSignOut, isDevMode } = useDevMode();
 
+  const handleSignOut = () => {
+    if (isDevMode) {
+      devSignOut();
+      window.location.href = '/login';
+    } else {
+      clerkSignOut();
+    }
+  };
+
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'viewBills', label: 'Bills', icon: FileText },
+    { id: 'viewUsers', label: 'Users', icon: Users },
+    { id: 'directPayments', label: 'Payments', icon: CreditCard },
+    { id: 'eventLogs', label: 'Logs', icon: Activity },
+    { id: 'ledger', label: 'Ledger', icon: Book }
+  ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-
-      {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full bg-white shadow-lg p-6 w-64 flex flex-col justify-between transition-transform duration-300 z-50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-8 mt-12 text-center">NFC Bill Tracker</h2>
-          
-          <nav className="space-y-4">
-            <button
-              onClick={() => { setActiveTab('overview'); setSidebarOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-100 ${activeTab === 'overview' ? 'bg-blue-200 font-semibold' : ''}`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => { setActiveTab('viewBills'); setSidebarOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-100 ${activeTab === 'viewBills' ? 'bg-blue-200 font-semibold' : ''}`}
-            >
-              View Bills
-            </button>
-            <button
-              onClick={() => { setActiveTab('viewUsers'); setSidebarOpen(false); }}
-              className={`w-full text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-100 ${activeTab === 'viewUsers' ? 'bg-blue-200 font-semibold' : ''}`}
-            >
-              View Users
-            </button>
-          </nav>
-        </div>
-
-        {/* Logout Button */}
-        <div className="mt-10">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="px-6 py-4 flex justify-between items-center">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-sm text-gray-600">Manage bills and payments</p>
+          </div>
           <button
-             onClick={() => signOut()}
-            className="w-full text-left px-4 py-3 rounded-lg text-red-500 hover:bg-red-100"
+            onClick={handleSignOut}
+            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition"
           >
-            Logout
+            <User size={20} className="text-gray-600" />
           </button>
         </div>
       </div>
 
-      {/* Hamburger Button */}
-      <button 
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md md:hidden"
-      >
-        {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Tab Navigation (Mobile Pills) */}
+      <div className="px-6 py-4 bg-white border-b">
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {navItems.map((item) => {
+            const IconComponent = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
+                  activeTab === item.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <IconComponent size={16} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto ml-0 md:ml-64">
-
-        {/* Tabs Navigation (Desktop version) */}
-        <div className="hidden md:flex justify-center mb-6">
-          <div className="flex space-x-4 border-b border-gray-300">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`pb-2 px-4 text-lg font-semibold ${activeTab === 'overview' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-            >
-              Overview
-            </button>
-
-            <button
-              onClick={() => setActiveTab('viewBills')}
-              className={`pb-2 px-4 text-lg font-semibold ${activeTab === 'viewBills' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-            >
-              View Bills
-            </button>
-
-            <button
-              onClick={() => setActiveTab('viewUsers')}
-              className={`pb-2 px-4 text-lg font-semibold ${activeTab === 'viewUsers' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-            >
-              View Users
-            </button>
-          </div>
-        </div>
-
-        {/* Content Display */}
-        <div className="max-w-7xl mx-auto">
-          {activeTab === 'overview' && <Overview />}
-          {activeTab === 'viewBills' && <ViewBills />}
-          {activeTab === 'viewUsers' && <ViewUsers />}
-        </div>
+      <div className="px-6 py-6">
+        {activeTab === 'overview' && <Overview />}
+        {activeTab === 'viewBills' && <ViewBills />}
+        {activeTab === 'viewUsers' && <ViewUsers />}
+        {activeTab === 'directPayments' && <DirectPaymentForm />}
+        {activeTab === 'eventLogs' && <EventLogs />}
+        {activeTab === 'ledger' && <Ledger />}
       </div>
     </div>
   );
