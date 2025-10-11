@@ -37,7 +37,7 @@ export default function EventLogs() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/event-logs', {
+      const response = await fetch('http://localhost:5001/api/event-logs', {
         signal: abortSignal
       });
       

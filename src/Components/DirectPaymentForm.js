@@ -17,6 +17,7 @@ export default function DirectPaymentForm() {
     category: '',
     photo: null,
   });
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,6 +27,10 @@ export default function DirectPaymentForm() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
+      
       new Compressor(file, {
         quality: 0.6,
         maxWidth: 1024,
@@ -35,6 +40,7 @@ export default function DirectPaymentForm() {
         },
         error(err) {
           console.error('Image compression failed:', err);
+          setPhotoPreview(null);
         },
       });
     }
@@ -60,7 +66,7 @@ export default function DirectPaymentForm() {
         formData.append('photo', paymentData.photo);
       }
 
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/direct-payment', {
+      const response = await fetch('http://localhost:5001/api/direct-payment', {
         method: 'POST',
         body: formData,
       });
@@ -78,6 +84,7 @@ export default function DirectPaymentForm() {
           category: '',
           photo: null,
         });
+        setPhotoPreview(null);
       } else {
         alert('Failed to log payment: ' + (result.message || 'Unknown error'));
       }
@@ -195,13 +202,38 @@ export default function DirectPaymentForm() {
                 className="hidden"
                 id="payment-photo-upload"
               />
-              <label htmlFor="payment-photo-upload" className="cursor-pointer">
-                <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-gray-400" />
+              {photoPreview ? (
+                <div className="space-y-3">
+                  <img 
+                    src={photoPreview} 
+                    alt="Receipt preview" 
+                    className="max-w-full h-32 object-cover rounded-lg mx-auto"
+                  />
+                  <div className="flex gap-2">
+                    <label htmlFor="payment-photo-upload" className="flex-1 bg-purple-100 text-purple-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-purple-200 transition">
+                      Change Photo
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        setPaymentData(prev => ({ ...prev, photo: null }));
+                      }}
+                      className="bg-red-100 text-red-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
-                <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
-              </label>
+              ) : (
+                <label htmlFor="payment-photo-upload" className="cursor-pointer">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
+                </label>
+              )}
             </div>
           </div>
 

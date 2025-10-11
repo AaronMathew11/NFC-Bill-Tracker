@@ -2,7 +2,7 @@
 
 export const sendEmailNotification = async (emailData) => {
   try {
-    const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/send-email', {
+    const response = await fetch('http://localhost:5001/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

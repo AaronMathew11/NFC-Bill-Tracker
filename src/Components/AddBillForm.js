@@ -4,11 +4,21 @@ import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
 
-export default function AddBillForm() {
+export default function AddBillForm({ editingBill = null, onSave = null }) {
   const { user } = useAuth();
   const userId = useUserId();
 
-  const [billData, setBillData] = useState({
+  const [billData, setBillData] = useState(editingBill ? {
+    entryDate: editingBill.entryDate ? new Date(editingBill.entryDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    billDate: editingBill.billDate ? new Date(editingBill.billDate).toISOString().split('T')[0] : '',
+    personName: editingBill.personName || '',
+    amount: editingBill.amount || '',
+    type: editingBill.type || 'debit',
+    description: editingBill.description || '',
+    category: editingBill.category || '',
+    photo: null,
+    isDraft: editingBill.isDraft || false,
+  } : {
     entryDate: new Date().toISOString().split('T')[0],
     billDate: '',
     personName: '',
@@ -19,6 +29,8 @@ export default function AddBillForm() {
     photo: null,
     isDraft: false,
   });
+  const [photoPreview, setPhotoPreview] = useState(editingBill?.photoUrl || null);
+  const [isEditing] = useState(!!editingBill);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,6 +40,10 @@ export default function AddBillForm() {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
+      
       // Compress the image using Compressor.js
       new Compressor(file, {
         quality: 0.6,  // Adjust the quality (0 to 1)
@@ -38,14 +54,64 @@ export default function AddBillForm() {
         },
         error(err) {
           console.error('Image compression failed:', err);
+          setPhotoPreview(null);
         },
       });
     }
   };
 
+  const saveDraftBill = async (draftData, showAlert = true) => {
+    try {
+      const formData = new FormData();
+      formData.append('entryDate', draftData.entryDate);
+      formData.append('billDate', draftData.billDate || '');
+      formData.append('category', draftData.category || '');
+      formData.append('isDraft', true);
+      formData.append('personName', draftData.personName || '');
+      formData.append('amount', draftData.amount || '0');
+      formData.append('type', draftData.type);
+      formData.append('description', draftData.description || '');
+      formData.append('userId', userId);
+      if (draftData.photo) {
+        formData.append('photo', draftData.photo);
+      }
+
+      const url = isEditing 
+        ? `http://localhost:5001/api/update-bill/${editingBill._id}`
+        : 'http://localhost:5001/api/upload-bill';
+      
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        if (showAlert) {
+          alert(isEditing ? 'Draft updated successfully!' : 'Draft saved successfully!');
+        }
+        if (onSave) {
+          onSave(result.bill);
+        }
+        return result.bill;
+      } else {
+        if (showAlert) {
+          alert('Failed to save draft: ' + (result.message || 'Unknown error'));
+        }
+        return null;
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      if (showAlert) {
+        alert('Failed to save draft. Please try again.');
+      }
+      return null;
+    }
+  };
+
   const checkForDuplicates = async (billData) => {
     try {
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/check-duplicate', {
+      const response = await fetch('http://localhost:5001/api/check-duplicate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,15 +132,23 @@ export default function AddBillForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check for duplicates if not a draft
+    // Validate required fields for submission (not draft)
     if (!billData.isDraft) {
-      const isDuplicate = await checkForDuplicates(billData);
-      if (isDuplicate) {
-        const confirmSubmit = window.confirm(
-          'A similar bill already exists with the same date, amount, and description. Do you want to proceed anyway?'
-        );
-        if (!confirmSubmit) {
-          return;
+      if (!billData.billDate || !billData.personName || !billData.amount || !billData.category) {
+        alert('Please fill in all required fields: Bill Date, Person Name, Amount, and Category');
+        return;
+      }
+
+      // Check for duplicates if not a draft and not editing
+      if (!isEditing) {
+        const isDuplicate = await checkForDuplicates(billData);
+        if (isDuplicate) {
+          const confirmSubmit = window.confirm(
+            'A similar bill already exists with the same date, amount, and description. Do you want to proceed anyway?'
+          );
+          if (!confirmSubmit) {
+            return;
+          }
         }
       }
     }
@@ -94,30 +168,41 @@ export default function AddBillForm() {
         formData.append('photo', billData.photo);
       }
 
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/upload-bill', {
-        method: 'POST',
+      const url = isEditing 
+        ? `http://localhost:5001/api/update-bill/${editingBill._id}`
+        : 'http://localhost:5001/api/upload-bill';
+
+      const response = await fetch(url, {
+        method: isEditing ? 'PATCH' : 'POST',
         body: formData,
       });
 
       const result = await response.json();
-      console.log(result);  // Log the result to debug
 
       if (response.ok) {
-        const message = billData.isDraft ? 'Bill saved as draft!' : 'Bill submitted successfully!';
+        const message = billData.isDraft 
+          ? (isEditing ? 'Draft updated successfully!' : 'Bill saved as draft!') 
+          : (isEditing ? 'Bill updated successfully!' : 'Bill submitted successfully!');
         alert(message);
-        setBillData({
-          entryDate: new Date().toISOString().split('T')[0],
-          billDate: '',
-          personName: '',
-          amount: '',
-          type: 'debit',
-          description: '',
-          category: '',
-          photo: null,
-          isDraft: false,
-        });
+        
+        if (onSave) {
+          onSave(result.bill);
+        } else {
+          setBillData({
+            entryDate: new Date().toISOString().split('T')[0],
+            billDate: '',
+            personName: '',
+            amount: '',
+            type: 'debit',
+            description: '',
+            category: '',
+            photo: null,
+            isDraft: false,
+          });
+          setPhotoPreview(null);
+        }
       } else {
-        alert('Failed to upload bill: ' + (result.message || 'Unknown error'));
+        alert('Failed to save bill: ' + (result.message || 'Unknown error'));
       }
 
     } catch (error) {
@@ -129,7 +214,19 @@ export default function AddBillForm() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Add New Bill</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEditing ? 'Edit Bill' : 'Add New Bill'}
+          </h2>
+          {isEditing && (
+            <button
+              onClick={() => onSave && onSave(null)}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Date Fields */}
@@ -141,7 +238,6 @@ export default function AddBillForm() {
                 name="entryDate"
                 value={billData.entryDate}
                 onChange={handleChange}
-                required
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
               />
             </div>
@@ -152,7 +248,6 @@ export default function AddBillForm() {
                 name="billDate"
                 value={billData.billDate}
                 onChange={handleChange}
-                required
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
               />
             </div>
@@ -160,29 +255,39 @@ export default function AddBillForm() {
 
           {/* Person Name Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Person Name</label>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Person Name</label>
             <input
               type="text"
               name="personName"
               placeholder="Enter person name"
               value={billData.personName}
               onChange={handleChange}
-              required
-              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+              className="w-full p-4 rounded-xl focus:ring-2 focus:border-transparent outline-none"
+              style={{
+                backgroundColor: 'var(--bg-glass)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                focusRingColor: 'var(--accent-primary)'
+              }}
             />
           </div>
 
           {/* Amount Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Amount (₹)</label>
             <input
               type="number"
               name="amount"
               placeholder="0.00"
               value={billData.amount}
               onChange={handleChange}
-              required
-              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+              className="w-full p-4 rounded-xl focus:ring-2 focus:border-transparent outline-none"
+              style={{
+                backgroundColor: 'var(--bg-glass)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                focusRingColor: 'var(--accent-primary)'
+              }}
             />
           </div>
 
@@ -194,7 +299,6 @@ export default function AddBillForm() {
                 name="category"
                 value={billData.category}
                 onChange={handleChange}
-                required
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
               >
                 <option value="">Select Category</option>
@@ -246,13 +350,38 @@ export default function AddBillForm() {
                 className="hidden"
                 id="photo-upload"
               />
-              <label htmlFor="photo-upload" className="cursor-pointer">
-                <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-gray-400" />
+              {photoPreview ? (
+                <div className="space-y-3">
+                  <img 
+                    src={photoPreview} 
+                    alt="Receipt preview" 
+                    className="max-w-full h-32 object-cover rounded-lg mx-auto"
+                  />
+                  <div className="flex gap-2">
+                    <label htmlFor="photo-upload" className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-blue-200 transition">
+                      Change Photo
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        setBillData(prev => ({ ...prev, photo: null }));
+                      }}
+                      className="bg-red-100 text-red-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
-                <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
-              </label>
+              ) : (
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
+                </label>
+              )}
             </div>
           </div>
 
@@ -260,19 +389,21 @@ export default function AddBillForm() {
           <div className="flex gap-3 pt-4">
             <button
               type="button"
-              onClick={(e) => {
-                setBillData(prev => ({ ...prev, isDraft: true }));
-                setTimeout(() => handleSubmit(e), 0);
+              onClick={async (e) => {
+                e.preventDefault();
+                const draftData = { ...billData, isDraft: true };
+                await saveDraftBill(draftData);
               }}
               className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl hover:bg-gray-200 transition font-medium"
             >
-              Save Draft
+              {isEditing ? 'Update Draft' : 'Save Draft'}
             </button>
             <button
               type="submit"
+              onClick={() => setBillData(prev => ({ ...prev, isDraft: false }))}
               className="flex-1 bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 transition font-medium shadow-sm"
             >
-              Submit Bill
+              {isEditing ? 'Update Bill' : 'Submit Bill'}
             </button>
           </div>
         </form>

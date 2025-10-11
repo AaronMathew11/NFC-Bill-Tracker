@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import ViewBills from './viewBills';
-import ViewUsers from './viewUsers';
 import Overview from './overview';
 import DirectPaymentForm from '../Components/DirectPaymentForm';
-import EventLogs from './eventLogs';
 import Ledger from './ledger';
-import { BarChart3, FileText, Users, CreditCard, Activity, Book, User } from 'lucide-react';
+import { BarChart3, FileText, CreditCard, Book, User } from 'lucide-react';
 import { useClerk } from '@clerk/clerk-react';
 import { useDevMode } from '../contexts/DevModeContext';
 
@@ -27,9 +25,7 @@ export default function AdminDashboard() {
   const navItems = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'viewBills', label: 'Bills', icon: FileText },
-    { id: 'viewUsers', label: 'Users', icon: Users },
-    { id: 'directPayments', label: 'Payments', icon: CreditCard },
-    { id: 'eventLogs', label: 'Logs', icon: Activity },
+    { id: 'directPayments', label: 'Pay', icon: CreditCard },
     { id: 'ledger', label: 'Ledger', icon: Book }
   ];
 
@@ -51,35 +47,35 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Tab Navigation (Mobile Pills) */}
-      <div className="px-6 py-4 bg-white border-b">
-        <div className="flex gap-2 overflow-x-auto pb-2">
+      {/* Main Content */}
+      <div className="px-4 py-4 pb-24">
+        {activeTab === 'overview' && <Overview />}
+        {activeTab === 'viewBills' && <ViewBills />}
+        {activeTab === 'directPayments' && <DirectPaymentForm />}
+        {activeTab === 'ledger' && <Ledger />}
+      </div>
+
+      {/* Bottom Navigation - 4 items */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
+        <div className="flex justify-around items-center px-1 py-2">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition ${
-                  activeTab === item.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                className={`flex flex-col items-center p-1.5 rounded-lg transition ${
+                  activeTab === item.id ? 'bg-blue-50' : 'hover:bg-gray-50'
                 }`}
               >
-                <IconComponent size={16} />
-                {item.label}
+                <IconComponent size={18} className={activeTab === item.id ? 'text-blue-600' : 'text-gray-500'} />
+                <span className={`text-xs mt-1 font-medium ${
+                  activeTab === item.id ? 'text-blue-600' : 'text-gray-500'
+                }`}>{item.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-6 py-6">
-        {activeTab === 'overview' && <Overview />}
-        {activeTab === 'viewBills' && <ViewBills />}
-        {activeTab === 'viewUsers' && <ViewUsers />}
-        {activeTab === 'directPayments' && <DirectPaymentForm />}
-        {activeTab === 'eventLogs' && <EventLogs />}
-        {activeTab === 'ledger' && <Ledger />}
       </div>
     </div>
   );

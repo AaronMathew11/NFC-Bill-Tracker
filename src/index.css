@@ -18,6 +18,16 @@ code {
 }
 
 /* PWA specific styles */
+
+/* Hide scrollbars for filter chips */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 @supports (padding: env(safe-area-inset-bottom)) {
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom);

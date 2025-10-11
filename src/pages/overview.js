@@ -11,6 +11,7 @@ export default function Overview() {
   const { user } = useAuth();
   const userId = useUserId();
   
+  const [allBills, setAllBills] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
@@ -26,6 +27,7 @@ export default function Overview() {
 
   // Reset state when user changes
   useEffect(() => {
+    setAllBills([]);
     setStatistics(null);
     setLoading(true);
     setBalance(0);
@@ -45,7 +47,7 @@ export default function Overview() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/all-bills', {
+      const response = await fetch('http://localhost:5001/api/all-bills', {
         signal: abortSignal
       });
       
@@ -53,34 +55,7 @@ export default function Overview() {
       
       const data = await response.json();
       if (data.success) {
-        const bills = data.bills;
-        const approvedBills = bills.filter(bill => bill.status === 'approved');
-        const declinedBills = bills.filter(bill => bill.status === 'rejected');
-
-        // Calculate balance - start from 0 for each user session
-        let updatedBalance = 0;
-        approvedBills.forEach(bill => {
-          if (bill.type === 'debit') {
-            updatedBalance -= Number(bill.amount);
-          } else if (bill.type === 'credit') {
-            updatedBalance += Number(bill.amount);
-          }
-        });
-
-        setBalance(updatedBalance);
-        setStatistics({ approvedBills, declinedBills });
-        
-        // Generate monthly trend data
-        const monthlyTrend = generateMonthlyTrend(approvedBills);
-        setMonthlyData(monthlyTrend);
-        
-        // Generate category breakdown
-        const categoryBreakdown = generateCategoryBreakdown(approvedBills);
-        setCategoryData(categoryBreakdown);
-        
-        // Generate pending by user data
-        const pendingUserData = generatePendingByUser(bills.filter(b => b.status === 'pending'));
-        setPendingByUser(pendingUserData);
+        setAllBills(data.bills);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -101,6 +76,83 @@ export default function Overview() {
       abortController.abort();
     };
   }, [fetchStatistics]);
+
+  // Filter bills based on current filters
+  const filterBills = useCallback((bills) => {
+    let filtered = bills;
+
+    // Date range filter
+    const now = new Date();
+    let startDate;
+    
+    if (filters.dateRange === 'month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (filters.dateRange === 'quarter') {
+      const quarter = Math.floor(now.getMonth() / 3);
+      startDate = new Date(now.getFullYear(), quarter * 3, 1);
+    } else if (filters.dateRange === 'year') {
+      startDate = new Date(now.getFullYear(), 0, 1);
+    }
+
+    if (startDate) {
+      filtered = filtered.filter(bill => {
+        const billDate = new Date(bill.billDate || bill.entryDate);
+        return billDate >= startDate;
+      });
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(bill => bill.category === filters.category);
+    }
+
+    // Bill type filter (reimbursement vs direct)
+    if (filters.billType) {
+      filtered = filtered.filter(bill => bill.paymentType === filters.billType);
+    }
+
+    // Status filter
+    if (filters.status) {
+      filtered = filtered.filter(bill => bill.status === filters.status);
+    }
+
+    return filtered;
+  }, [filters]);
+
+  // Calculate statistics when bills or filters change
+  useEffect(() => {
+    if (allBills.length === 0) return;
+
+    const filteredBills = filterBills(allBills);
+    const approvedBills = filteredBills.filter(bill => bill.status === 'approved');
+    const declinedBills = filteredBills.filter(bill => bill.status === 'rejected');
+
+    // Calculate balance
+    let updatedBalance = 0;
+    approvedBills.forEach(bill => {
+      if (bill.type === 'debit') {
+        updatedBalance -= Number(bill.amount);
+      } else if (bill.type === 'credit') {
+        updatedBalance += Number(bill.amount);
+      }
+    });
+
+    setBalance(updatedBalance);
+    setStatistics({ approvedBills, declinedBills });
+    
+    // Generate monthly trend data
+    const monthlyTrend = generateMonthlyTrend(approvedBills);
+    setMonthlyData(monthlyTrend);
+    
+    // Generate category breakdown
+    const categoryBreakdown = generateCategoryBreakdown(approvedBills);
+    setCategoryData(categoryBreakdown);
+    
+    // Generate pending by user data - use all pending bills regardless of other filters
+    const allPendingBills = allBills.filter(b => b.status === 'pending');
+    const pendingUserData = generatePendingByUser(allPendingBills);
+    setPendingByUser(pendingUserData);
+  }, [allBills, filterBills]);
 
   const generateMonthlyTrend = (bills) => {
     const monthlyExpenses = {};
@@ -219,165 +271,246 @@ export default function Overview() {
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50">
       <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Dashboard Overview</h2>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Mobile Filters */}
+      <div className="space-y-3 mb-6">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Time Period</h3>
           <select
             name="dateRange"
             value={filters.dateRange}
             onChange={handleFilterChange}
-            className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full p-3 bg-blue-50 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-blue-700 font-medium"
           >
             <option value="month">This Month</option>
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
           </select>
-          <select
-            name="category"
-            value={filters.category}
-            onChange={handleFilterChange}
-            className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">All Categories</option>
-            <option value="Events">Events</option>
-            <option value="Supplies">Supplies</option>
-            <option value="Maintenance">Maintenance</option>
-          </select>
-          <select
-            name="billType"
-            value={filters.billType}
-            onChange={handleFilterChange}
-            className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">All Types</option>
-            <option value="reimbursement">Reimbursements</option>
-            <option value="direct">Direct Payments</option>
-          </select>
-          <select
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-            className="p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
         </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-500">Total Credit</div>
-          <div className="text-2xl font-bold text-green-600 mt-2">
-            ₹{statistics?.approvedBills.filter(b => b.type === 'credit').reduce((sum, b) => sum + Number(b.amount), 0).toLocaleString() || 0}
+        
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+            <select
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+            >
+              <option value="">All Categories</option>
+              <option value="Events">Events</option>
+              <option value="Supplies">Supplies</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Travel">Travel</option>
+              <option value="Food">Food</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-500">Total Debit</div>
-          <div className="text-2xl font-bold text-red-600 mt-2">
-            ₹{statistics?.approvedBills.filter(b => b.type === 'debit').reduce((sum, b) => sum + Number(b.amount), 0).toLocaleString() || 0}
+          <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+            <select
+              name="billType"
+              value={filters.billType}
+              onChange={handleFilterChange}
+              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+            >
+              <option value="">All Types</option>
+              <option value="reimbursement">Reimbursements</option>
+              <option value="direct">Direct Payments</option>
+            </select>
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-500">Current Balance</div>
-          <div className="text-2xl font-bold text-gray-900 mt-2">
-            ₹{balance.toLocaleString()}
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="text-sm font-medium text-gray-500">Pending Count</div>
-          <div className="text-2xl font-bold text-yellow-600 mt-2">
-            {pendingByUser.reduce((sum, [, count]) => sum + count, 0)}
+          <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
+            <select
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Monthly Trend Line Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Expense Trend</h3>
-          <div className="h-64">
-            <Line data={monthlyLineData} options={{ responsive: true, maintainAspectRatio: false }} />
+      {/* KPI Cards - Mobile First */}
+      <div className="space-y-4 mb-6">
+        {/* Primary Balance Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="text-center">
+            <div className="text-sm font-medium text-gray-500 mb-2">Current Balance</div>
+            <div className={`text-4xl font-bold mb-2 ${
+              balance >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              ₹{balance.toLocaleString()}
+            </div>
+            <div className="text-xs text-gray-400">Updated just now</div>
           </div>
         </div>
-
-        {/* Bills Status Pie Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Bills Status</h3>
-          <div className="h-64">
-            <Pie data={statusPieData} options={pieOptions} />
+        
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-3">
+              <div className="w-6 h-6 bg-green-500 rounded-full"></div>
+            </div>
+            <div className="text-sm font-medium text-gray-500">Total Credit</div>
+            <div className="text-2xl font-bold text-green-600 mt-1">
+              ₹{statistics?.approvedBills.filter(b => b.type === 'credit').reduce((sum, b) => sum + Number(b.amount), 0).toLocaleString() || 0}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-3">
+              <div className="w-6 h-6 bg-red-500 rounded-full"></div>
+            </div>
+            <div className="text-sm font-medium text-gray-500">Total Debit</div>
+            <div className="text-2xl font-bold text-red-600 mt-1">
+              ₹{statistics?.approvedBills.filter(b => b.type === 'debit').reduce((sum, b) => sum + Number(b.amount), 0).toLocaleString() || 0}
+            </div>
           </div>
         </div>
-
-        {/* Top Categories Bar Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Categories</h3>
-          <div className="h-64">
-            <Bar data={categoryBarData} options={{ responsive: true, maintainAspectRatio: false }} />
-          </div>
-        </div>
-
-        {/* Pending by User Bar Chart */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Pending by User</h3>
-          <div className="h-64">
-            <Bar data={pendingUserBarData} options={{ responsive: true, maintainAspectRatio: false }} />
+        
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-gray-500">Pending Requests</div>
+              <div className="text-2xl font-bold text-amber-600 mt-1">
+                {pendingByUser.reduce((sum, [, count]) => sum + count, 0)}
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">
+              <div className="w-6 h-6 bg-amber-500 rounded-full"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Approved Bills Table */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">Recent Approved Bills</h3>
+      {/* Mobile Charts */}
+      <div className="space-y-6 mb-8">
+        {/* Monthly Trend - Simplified */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Monthly Trends</h3>
+            <div className="text-xs text-gray-500">Last 6 months</div>
+          </div>
+          <div className="h-48">
+            <Line data={monthlyLineData} options={{ 
+              responsive: true, 
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                x: { display: false },
+                y: { display: false }
+              },
+              elements: {
+                point: { radius: 4 },
+                line: { borderWidth: 3 }
+              }
+            }} />
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white table-auto">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Person/Vendor</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {statistics.approvedBills.slice(0, 10).map((bill) => (
-                <tr key={bill._id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(bill.billDate || bill.entryDate).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
-                    {bill.personName || bill.vendorName}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-900 max-w-xs truncate">
-                    {bill.description}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-900">
-                    {bill.category || 'Other'}
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap text-sm font-medium">
-                    <span className={bill.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                      {bill.type === 'credit' ? '+' : '-'} ₹{Number(bill.amount).toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      bill.paymentType === 'direct' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {bill.paymentType === 'direct' ? 'Direct' : 'Reimbursement'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* Top Categories - List View */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Top Categories</h3>
+          <div className="space-y-3">
+            {categoryData.slice(0, 5).map(([category, amount], index) => {
+              const maxAmount = Math.max(...categoryData.map(([, amt]) => amt));
+              const percentage = maxAmount > 0 ? (amount / maxAmount) * 100 : 0;
+              return (
+                <div key={category} className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    index === 0 ? 'bg-blue-500' :
+                    index === 1 ? 'bg-purple-500' :
+                    index === 2 ? 'bg-green-500' :
+                    index === 3 ? 'bg-orange-500' :
+                    'bg-gray-400'
+                  }`}></div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium text-gray-900">{category}</span>
+                      <span className="text-sm font-bold text-gray-900">₹{amount.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          index === 0 ? 'bg-blue-500' :
+                          index === 1 ? 'bg-purple-500' :
+                          index === 2 ? 'bg-green-500' :
+                          index === 3 ? 'bg-orange-500' :
+                          'bg-gray-400'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Pending Users - Card View */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Pending by User</h3>
+          <div className="space-y-3">
+            {pendingByUser.slice(0, 5).map(([userName, count]) => (
+              <div key={userName} className="flex items-center justify-between p-3 bg-amber-50 rounded-2xl">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">{userName.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{userName}</span>
+                </div>
+                <div className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  {count}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Transactions - Mobile Cards */}
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Recent Transactions</h3>
+          <span className="text-xs text-gray-500">Last 10 bills</span>
+        </div>
+        <div className="space-y-3">
+          {statistics.approvedBills.slice(0, 8).map((bill) => (
+            <div key={bill._id} className="flex items-center space-x-4 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                bill.type === 'credit' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                <div className={`w-6 h-6 rounded-full ${
+                  bill.type === 'credit' ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{bill.description}</p>
+                <div className="flex items-center space-x-2 mt-1">
+                  <p className="text-xs text-gray-500">{bill.personName || bill.vendorName}</p>
+                  <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                  <p className="text-xs text-gray-500">{new Date(bill.billDate || bill.entryDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`text-sm font-bold ${
+                  bill.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {bill.type === 'credit' ? '+' : '-'}₹{Number(bill.amount).toLocaleString()}
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full mt-1 ${
+                  bill.paymentType === 'direct' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {bill.paymentType === 'direct' ? 'Direct' : 'Reimb'}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

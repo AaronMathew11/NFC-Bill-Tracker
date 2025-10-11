@@ -26,7 +26,7 @@ export default function ViewBills() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://nfc-bill-tracker-backend.onrender.com/api/all-bills', {
+      const response = await fetch('http://localhost:5001/api/all-bills', {
         signal: abortSignal
       });
       
@@ -64,13 +64,13 @@ export default function ViewBills() {
   }
 
   async function handleUpdateStatus(billId, status) {
-    if (!remark.trim() && (status === 'rejected' || status === 'needs_update')) {
+    if (!remark.trim() && (status === 'rejected' || status === 'returned')) {
       alert('Please enter a remark before proceeding.');
       return;
     }
 
     try {
-      const response = await fetch(`https://nfc-bill-tracker-backend.onrender.com/api/update-bill-status/${billId}`, {
+      const response = await fetch(`http://localhost:5001/api/update-bill-status/${billId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status, remark }),
         headers: { 'Content-Type': 'application/json' },
@@ -118,7 +118,7 @@ export default function ViewBills() {
   }
 
   function onReturnClick() {
-    setActionType('needs_update');
+    setActionType('returned');
   }
 
   if (loading) {
