@@ -77,8 +77,8 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
       }
 
       const url = isEditing 
-        ? `http://localhost:5001/api/update-bill/${editingBill._id}`
-        : 'http://localhost:5001/api/upload-bill';
+        ? `https://api-lyymlpizsa-uc.a.run.app/api/update-bill/${editingBill._id}`
+        : 'https://api-lyymlpizsa-uc.a.run.app/api/upload-bill';
       
       const response = await fetch(url, {
         method: isEditing ? 'PATCH' : 'POST',
@@ -111,7 +111,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
 
   const checkForDuplicates = async (billData) => {
     try {
-      const response = await fetch('http://localhost:5001/api/check-duplicate', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/check-duplicate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -169,8 +169,8 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
       }
 
       const url = isEditing 
-        ? `http://localhost:5001/api/update-bill/${editingBill._id}`
-        : 'http://localhost:5001/api/upload-bill';
+        ? `https://api-lyymlpizsa-uc.a.run.app/api/update-bill/${editingBill._id}`
+        : 'https://api-lyymlpizsa-uc.a.run.app/api/upload-bill';
 
       const response = await fetch(url, {
         method: isEditing ? 'PATCH' : 'POST',

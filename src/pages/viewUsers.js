@@ -21,7 +21,7 @@ export default function ViewUsers() {
     
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/users', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/users', {
         signal: abortSignal
       });
       

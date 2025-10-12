@@ -43,7 +43,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if ((activePage === 'view' || activePage === 'home') && userId) {
-      fetch(`http://localhost:5001/api/user-bills/${userId}`)
+      fetch(`https://api-lyymlpizsa-uc.a.run.app/api/user-bills/${userId}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
@@ -98,7 +98,7 @@ export default function Dashboard() {
   const handleDeleteDraft = async (billId) => {
     if (window.confirm('Are you sure you want to delete this draft?')) {
       try {
-        const response = await fetch(`http://localhost:5001/api/delete-bill/${billId}`, {
+        const response = await fetch(`https://api-lyymlpizsa-uc.a.run.app/api/delete-bill/${billId}`, {
           method: 'DELETE',
         });
         

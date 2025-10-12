@@ -66,7 +66,7 @@ export default function DirectPaymentForm() {
         formData.append('photo', paymentData.photo);
       }
 
-      const response = await fetch('http://localhost:5001/api/direct-payment', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/direct-payment', {
         method: 'POST',
         body: formData,
       });

@@ -47,7 +47,7 @@ export default function Overview() {
     
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/all-bills', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/all-bills', {
         signal: abortSignal
       });
       

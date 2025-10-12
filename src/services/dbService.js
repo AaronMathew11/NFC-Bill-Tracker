@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5001/api'; // if your backend is running locally
+const API_BASE = 'https://api-lyymlpizsa-uc.a.run.app/api'; // Firebase Functions deployment
 
 // Add new bill
 export const addBill = async (billData) => {

@@ -58,7 +58,7 @@ export default function Ledger() {
     
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/ledger', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/ledger', {
         signal: abortSignal
       });
       
@@ -85,7 +85,7 @@ export default function Ledger() {
     
     try {
       setLogsLoading(true);
-      const response = await fetch('http://localhost:5001/api/event-logs', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/event-logs', {
         signal: abortSignal
       });
       

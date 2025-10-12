@@ -26,7 +26,7 @@ export default function ViewBills() {
     
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5001/api/all-bills', {
+      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/all-bills', {
         signal: abortSignal
       });
       
@@ -70,7 +70,7 @@ export default function ViewBills() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/update-bill-status/${billId}`, {
+      const response = await fetch(`https://api-lyymlpizsa-uc.a.run.app/api/update-bill-status/${billId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status, remark }),
         headers: { 'Content-Type': 'application/json' },
