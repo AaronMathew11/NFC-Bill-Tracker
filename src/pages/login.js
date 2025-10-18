@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import CustomAuth from '../Components/CustomAuth';
+import GoogleAuth from '../Components/GoogleAuth';
 import DevModeAuth from '../Components/DevModeAuth';
-import { FileText, Shield } from 'lucide-react';
+import { FileText, Code } from 'lucide-react';
 
 export default function Login() {
   const [showDevMode, setShowDevMode] = useState(false);
@@ -35,8 +35,8 @@ export default function Login() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Shield className="w-3 h-3" />
-                Production
+                <FileText className="w-3 h-3" />
+                Google Login
               </button>
               <button
                 onClick={() => setShowDevMode(true)}
@@ -46,7 +46,7 @@ export default function Login() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <FileText className="w-3 h-3" />
+                <Code className="w-3 h-3" />
                 Dev Mode
               </button>
             </div>
@@ -56,7 +56,7 @@ export default function Login() {
           {showDevMode ? (
             <DevModeAuth />
           ) : (
-            <CustomAuth />
+            <GoogleAuth />
           )}
         </div>
 
