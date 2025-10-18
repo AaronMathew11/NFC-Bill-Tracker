@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import GoogleAuth from '../Components/GoogleAuth';
+import SimpleGoogleAuth from '../Components/SimpleGoogleAuth';
 import DevModeAuth from '../Components/DevModeAuth';
+import DebugInfo from '../Components/DebugInfo';
 import { FileText, Code } from 'lucide-react';
 
 export default function Login() {
@@ -56,7 +57,7 @@ export default function Login() {
           {showDevMode ? (
             <DevModeAuth />
           ) : (
-            <GoogleAuth />
+            <SimpleGoogleAuth />
           )}
         </div>
 
@@ -65,6 +66,9 @@ export default function Login() {
           <p>Secure financial management for your church</p>
         </div>
       </div>
+      
+      {/* Debug Info */}
+      <DebugInfo />
     </div>
   );
 }

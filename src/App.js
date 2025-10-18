@@ -8,12 +8,28 @@ import Login from './pages/login';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
-  const { user } = useAuth();
+  const { user, isSignedIn } = useAuth();
   const userKey = user?.publicMetadata?.id || user?.id || 'anonymous';
+
+  // Auto-redirect logic for root path
+  const AutoRedirect = () => {
+    if (!isSignedIn) {
+      return <Navigate to="/login" replace />;
+    }
+    
+    const role = user?.publicMetadata?.role || user?.role || "user";
+    if (role === "admin") {
+      return <Navigate to="/admin" replace />;
+    } else {
+      return <Navigate to="/user" replace />;
+    }
+  };
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={
+        isSignedIn ? <AutoRedirect /> : <Login />
+      } />
 
       <Route path="/admin" element={
         <AuthWrapper>
@@ -31,7 +47,8 @@ function App() {
         </AuthWrapper>
       } />
 
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="/" element={<AutoRedirect />} />
+      <Route path="*" element={<AutoRedirect />} />
     </Routes>
   );
 }

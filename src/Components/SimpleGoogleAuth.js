@@ -1,54 +1,58 @@
 import { useState } from 'react';
-import { useSignIn, useClerk } from '@clerk/clerk-react';
+import { useSignIn, useClerk, useUser } from '@clerk/clerk-react';
 
-export default function GoogleAuth() {
-  const { signIn } = useSignIn();
-  const { session } = useClerk();
+export default function SimpleGoogleAuth() {
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const { signOut } = useClerk();
+  const { isSignedIn, user } = useUser();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // If already signed in, show sign out option
+  if (isSignedIn) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 w-full max-w-sm">
+        <div className="text-center mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Already Signed In</h2>
+          <p className="text-gray-600 text-xs">Signed in as: {user?.primaryEmailAddress?.emailAddress}</p>
+        </div>
+        
+        <button
+          onClick={() => {
+            signOut();
+            window.location.reload();
+          }}
+          className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-all shadow-sm text-sm"
+        >
+          Sign Out & Try Again
+        </button>
+      </div>
+    );
+  }
+
   const handleGoogleSignIn = async () => {
+    if (!signInLoaded) {
+      setError('Authentication not ready. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
     try {
-      console.log('Starting Google sign-in...');
-      console.log('signIn object:', signIn);
+      console.log('Starting Google sign-in with Clerk...');
       
-      // Check if signIn is properly initialized
-      if (!signIn) {
-        throw new Error('Sign-in not initialized. Please refresh the page.');
-      }
-
-      // If there's already a session, try to sign out first
-      if (session) {
-        console.log('Clearing existing session...');
-        await session.end();
-        // Small delay to ensure cleanup
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      console.log('Attempting Google OAuth...');
-      const result = await signIn.authenticateWithRedirect({
+      await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: window.location.origin,
         redirectUrlComplete: window.location.origin,
       });
-
-      console.log('Google sign-in result:', result);
-
-      // If successful and no redirect happened, handle locally
-      if (result && result.status === 'complete') {
-        window.location.reload();
-      }
+      
+      // The page will redirect, so we shouldn't reach here normally
+      console.log('Redirect initiated...');
+      
     } catch (err) {
       console.error('Google sign in error:', err);
-      console.error('Error details:', {
-        message: err.message,
-        errors: err.errors,
-        code: err.code,
-        stack: err.stack
-      });
       
       let errorMessage = 'Google sign in failed';
       
@@ -62,6 +66,17 @@ export default function GoogleAuth() {
       setLoading(false);
     }
   };
+
+  if (!signInLoaded) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 w-full max-w-sm">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 w-full max-w-sm">
@@ -87,7 +102,7 @@ export default function GoogleAuth() {
       <button
         type="button"
         onClick={handleGoogleSignIn}
-        disabled={loading}
+        disabled={loading || !signInLoaded}
         className="w-full bg-white border border-gray-200 text-gray-700 py-4 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-300 hover:shadow-md transition-all shadow-sm text-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
@@ -107,24 +122,6 @@ export default function GoogleAuth() {
           </>
         )}
       </button>
-
-      {/* Clear Session Button for troubleshooting */}
-      {session && (
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              await session.end();
-              window.location.reload();
-            } catch (err) {
-              console.error('Error clearing session:', err);
-            }
-          }}
-          className="w-full mt-3 bg-red-50 border border-red-200 text-red-700 py-2 rounded-lg font-medium hover:bg-red-100 transition-all text-xs"
-        >
-          Clear Existing Session
-        </button>
-      )}
 
       <div className="mt-6 text-center">
         <p className="text-xs text-gray-500">
