@@ -16,6 +16,7 @@ export default function Overview() {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const [monthlyData, setMonthlyData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [pendingByUser, setPendingByUser] = useState([]);
@@ -32,6 +33,7 @@ export default function Overview() {
     setStatistics(null);
     setLoading(true);
     setBalance(0);
+    setTotalBalance(0);
     setMonthlyData([]);
     setCategoryData([]);
     setPendingByUser([]);
@@ -124,7 +126,7 @@ export default function Overview() {
     const approvedBills = filteredBills.filter(bill => bill.status === 'approved');
     const declinedBills = filteredBills.filter(bill => bill.status === 'rejected');
 
-    // Calculate balance
+    // Calculate filtered balance (for current period)
     let updatedBalance = 0;
     approvedBills.forEach(bill => {
       if (bill.type === 'debit') {
@@ -134,7 +136,19 @@ export default function Overview() {
       }
     });
 
+    // Calculate total balance (all approved bills, unfiltered)
+    const allApprovedBills = allBills.filter(bill => bill.status === 'approved');
+    let updatedTotalBalance = 0;
+    allApprovedBills.forEach(bill => {
+      if (bill.type === 'debit') {
+        updatedTotalBalance -= Number(bill.amount);
+      } else if (bill.type === 'credit') {
+        updatedTotalBalance += Number(bill.amount);
+      }
+    });
+
     setBalance(updatedBalance);
+    setTotalBalance(updatedTotalBalance);
     setStatistics({ approvedBills, declinedBills });
     
     // Generate monthly trend data
@@ -337,9 +351,16 @@ export default function Overview() {
           <div className="text-center">
             <div className="text-sm font-medium text-gray-500 mb-2">Current Balance</div>
             <div className={`text-4xl font-bold mb-2 ${
-              balance >= 0 ? 'text-green-600' : 'text-red-600'
+              totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
-              ₹{balance.toLocaleString()}
+              ₹{totalBalance.toLocaleString()}
+            </div>
+            <div className="text-xs text-gray-400 mb-3">
+              {filters.dateRange === 'month' ? 'This Month' : 
+               filters.dateRange === 'quarter' ? 'This Quarter' : 
+               filters.dateRange === 'year' ? 'This Year' : 'Filtered'}: <span className={`font-semibold ${
+                balance >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>₹{balance.toLocaleString()}</span>
             </div>
             <div className="text-xs text-gray-400">Updated just now</div>
           </div>

@@ -12,7 +12,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
   const [billData, setBillData] = useState(editingBill ? {
     entryDate: editingBill.entryDate ? new Date(editingBill.entryDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     billDate: editingBill.billDate ? new Date(editingBill.billDate).toISOString().split('T')[0] : '',
-    personName: editingBill.personName || '',
+    personName: editingBill.personName || user?.fullName || user?.firstName || '',
     amount: editingBill.amount || '',
     type: editingBill.type || 'debit',
     description: editingBill.description || '',
@@ -22,7 +22,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
   } : {
     entryDate: new Date().toISOString().split('T')[0],
     billDate: '',
-    personName: '',
+    personName: user?.fullName || user?.firstName || '',
     amount: '',
     type: 'debit',
     description: '',
@@ -146,6 +146,12 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
     if (!billData.isDraft) {
       if (!billData.billDate || !billData.personName || !billData.amount || !billData.category) {
         alert('Please fill in all required fields: Bill Date, Person Name, Amount, and Category');
+        return;
+      }
+
+      // Validate bill date is not after entry date
+      if (new Date(billData.billDate) > new Date(billData.entryDate)) {
+        alert('Bill date cannot be later than entry date');
         return;
       }
 
@@ -321,8 +327,8 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
                 onChange={handleChange}
                 className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
               >
-                <option value="debit">Expense</option>
-                <option value="credit">Income</option>
+                <option value="debit">Debit</option>
+                <option value="credit">Credit</option>
               </select>
             </div>
           </div>
