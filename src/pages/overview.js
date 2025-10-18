@@ -117,10 +117,24 @@ export default function Overview() {
     }
 
     if (startDate) {
+      console.log('Date filter - startDate:', startDate);
+      console.log('Current year:', now.getFullYear());
+      
       filtered = filtered.filter(bill => {
         const billDate = new Date(bill.billDate || bill.entryDate);
-        return billDate >= startDate;
+        const included = billDate >= startDate;
+        
+        if (filters.dateRange === 'year') {
+          console.log('Bill:', bill.description, 'Date:', billDate, 'Included:', included);
+        }
+        
+        return included;
       });
+      
+      if (filters.dateRange === 'year') {
+        console.log('Total bills after year filter:', filtered.length);
+        console.log('Approved bills after year filter:', filtered.filter(b => b.status === 'approved').length);
+      }
     }
 
     // Category filter
@@ -372,18 +386,20 @@ export default function Overview() {
         {/* Primary Balance Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <div className="text-center">
-            <div className="text-sm font-medium text-gray-500 mb-2">Current Balance</div>
+            <div className="text-sm font-medium text-gray-500 mb-2">
+              {filters.dateRange === 'month' ? 'This Month Balance' : 
+               filters.dateRange === 'quarter' ? 'This Quarter Balance' : 
+               filters.dateRange === 'year' ? 'This Year Balance' : 'Current Balance'}
+            </div>
             <div className={`text-4xl font-bold mb-2 ${
-              totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
+              balance >= 0 ? 'text-green-600' : 'text-red-600'
             }`}>
-              ₹{totalBalance.toLocaleString()}
+              ₹{balance.toLocaleString()}
             </div>
             <div className="text-xs text-gray-400 mb-3">
-              {filters.dateRange === 'month' ? 'This Month' : 
-               filters.dateRange === 'quarter' ? 'This Quarter' : 
-               filters.dateRange === 'year' ? 'This Year' : 'Filtered'}: <span className={`font-semibold ${
-                balance >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>₹{balance.toLocaleString()}</span>
+              Total Balance: <span className={`font-semibold ${
+                totalBalance >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>₹{totalBalance.toLocaleString()}</span>
             </div>
             <div className="text-xs text-gray-400">Updated just now</div>
           </div>
