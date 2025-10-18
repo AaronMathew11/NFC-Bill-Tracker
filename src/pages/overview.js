@@ -122,6 +122,15 @@ export default function Overview() {
       
       filtered = filtered.filter(bill => {
         const billDate = new Date(bill.billDate || bill.entryDate);
+        
+        // If date is invalid, include the bill (don't filter it out)
+        if (isNaN(billDate.getTime())) {
+          if (filters.dateRange === 'year') {
+            console.log('Bill:', bill.description, 'Date: Invalid (including in filter)', 'Included: true');
+          }
+          return true;
+        }
+        
         const included = billDate >= startDate;
         
         if (filters.dateRange === 'year') {
