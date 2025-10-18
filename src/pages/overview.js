@@ -60,24 +60,6 @@ export default function Overview() {
       if (billsData.success) {
         setAllBills(billsData.bills);
         
-        // Debug: Compare our calculation with ledger's final balance
-        if (ledgerData.success && ledgerData.ledger.length > 0) {
-          const ledgerFinalBalance = ledgerData.ledger[ledgerData.ledger.length - 1].balance;
-          console.log('Ledger final balance:', ledgerFinalBalance);
-          setLedgerBalance(ledgerFinalBalance);
-          
-          const approvedBills = billsData.bills.filter(bill => bill.status === 'approved');
-          let calculatedBalance = 0;
-          approvedBills.forEach(bill => {
-            if (bill.type === 'debit') {
-              calculatedBalance -= Number(bill.amount);
-            } else if (bill.type === 'credit') {
-              calculatedBalance += Number(bill.amount);
-            }
-          });
-          console.log('Overview calculated balance:', calculatedBalance);
-          console.log('Total approved bills:', approvedBills.length);
-        }
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -117,33 +99,16 @@ export default function Overview() {
     }
 
     if (startDate) {
-      console.log('Date filter - startDate:', startDate);
-      console.log('Current year:', now.getFullYear());
-      
       filtered = filtered.filter(bill => {
         const billDate = new Date(bill.billDate || bill.entryDate);
         
         // If date is invalid, include the bill (don't filter it out)
         if (isNaN(billDate.getTime())) {
-          if (filters.dateRange === 'year') {
-            console.log('Bill:', bill.description, 'Date: Invalid (including in filter)', 'Included: true');
-          }
           return true;
         }
         
-        const included = billDate >= startDate;
-        
-        if (filters.dateRange === 'year') {
-          console.log('Bill:', bill.description, 'Date:', billDate, 'Included:', included);
-        }
-        
-        return included;
+        return billDate >= startDate;
       });
-      
-      if (filters.dateRange === 'year') {
-        console.log('Total bills after year filter:', filtered.length);
-        console.log('Approved bills after year filter:', filtered.filter(b => b.status === 'approved').length);
-      }
     }
 
     // Category filter
@@ -166,7 +131,16 @@ export default function Overview() {
 
   // Calculate statistics when bills or filters change
   useEffect(() => {
-    if (allBills.length === 0) return;
+    // Always set statistics, even if there are no bills
+    if (allBills.length === 0) {
+      setBalance(0);
+      setTotalBalance(0);
+      setStatistics({ approvedBills: [], declinedBills: [] });
+      setMonthlyData([]);
+      setCategoryData([]);
+      setPendingByUser([]);
+      return;
+    }
 
     const filteredBills = filterBills(allBills);
     const approvedBills = filteredBills.filter(bill => bill.status === 'approved');
@@ -249,7 +223,8 @@ export default function Overview() {
     return <div className="text-center mt-10 text-gray-500">Loading Overview...</div>;
   }
 
-  if (!statistics) {
+  // Only show error if we're not loading and still don't have statistics
+  if (!loading && !statistics) {
     return <div className="text-center mt-10 text-red-500">Failed to load statistics.</div>;
   }
 
