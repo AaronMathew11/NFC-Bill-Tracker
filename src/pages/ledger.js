@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Download, Activity, Book, Search, Filter, Calendar } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
+import { getLedger, getEventLogs } from '../services/dbService';
 
 export default function Ledger() {
   const { user } = useAuth();
@@ -58,13 +59,9 @@ export default function Ledger() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/ledger', {
-        signal: abortSignal
-      });
+      const data = await getLedger();
       
       if (abortSignal?.aborted) return;
-      
-      const data = await response.json();
       if (data.success) {
         setLedgerData(data.ledger || []);
         setFilteredData(data.ledger || []);
@@ -85,13 +82,9 @@ export default function Ledger() {
     
     try {
       setLogsLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/event-logs', {
-        signal: abortSignal
-      });
+      const data = await getEventLogs();
       
       if (abortSignal?.aborted) return;
-      
-      const data = await response.json();
       if (data.success) {
         setEventLogs(data.logs || []);
         setFilteredLogs(data.logs || []);

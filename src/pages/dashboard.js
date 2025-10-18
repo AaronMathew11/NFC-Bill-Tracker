@@ -4,6 +4,7 @@ import { useClerk } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { useDevMode } from '../contexts/DevModeContext';
+import { getUserBills, getUserReturnedBills, deleteBill } from '../services/dbService';
 import { Home, Plus, FileText, User, Search, Filter, ChevronDown } from 'lucide-react';
 
 export default function Dashboard() {
@@ -42,21 +43,34 @@ export default function Dashboard() {
   }, [userId]);
 
   useEffect(() => {
-    if ((activePage === 'view' || activePage === 'home') && userId) {
-      fetch(`https://api-lyymlpizsa-uc.a.run.app/api/user-bills/${userId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setBills(data.bills);
-          } else {
-            alert('Failed to load bills');
-          }
-        })
-        .catch((error) => {
-          console.error(error);
+    const fetchUserBills = async () => {
+      if ((activePage === 'view' || activePage === 'home') && userId) {
+        try {
+          // Fetch both regular bills and returned bills
+          const [userBillsData, returnedBillsData] = await Promise.all([
+            getUserBills(userId),
+            getUserReturnedBills(userId)
+          ]);
+
+          // Combine all bills, avoiding duplicates
+          const allUserBills = [...userBillsData.bills];
+          
+          // Add returned bills that aren't already in the main list
+          returnedBillsData.bills.forEach(returnedBill => {
+            if (!allUserBills.find(bill => bill._id === returnedBill._id)) {
+              allUserBills.push(returnedBill);
+            }
+          });
+
+          setBills(allUserBills);
+        } catch (error) {
+          console.error('Error fetching bills:', error);
           alert('Failed to fetch bills');
-        });
-    }
+        }
+      }
+    };
+
+    fetchUserBills();
   }, [activePage, userId]);
 
   // Close dropdown when clicking outside
@@ -98,16 +112,9 @@ export default function Dashboard() {
   const handleDeleteDraft = async (billId) => {
     if (window.confirm('Are you sure you want to delete this draft?')) {
       try {
-        const response = await fetch(`https://api-lyymlpizsa-uc.a.run.app/api/delete-bill/${billId}`, {
-          method: 'DELETE',
-        });
-        
-        if (response.ok) {
-          setBills(prevBills => prevBills.filter(bill => bill._id !== billId));
-          alert('Draft deleted successfully!');
-        } else {
-          alert('Failed to delete draft');
-        }
+        await deleteBill(billId);
+        setBills(prevBills => prevBills.filter(bill => bill._id !== billId));
+        alert('Draft deleted successfully!');
       } catch (error) {
         console.error('Error deleting draft:', error);
         alert('Failed to delete draft');

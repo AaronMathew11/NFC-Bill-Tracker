@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Download, Search } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
+import { getEventLogs } from '../services/dbService';
 
 export default function EventLogs() {
   const { user } = useAuth();
@@ -37,13 +38,10 @@ export default function EventLogs() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/event-logs', {
-        signal: abortSignal
-      });
+      const data = await getEventLogs();
       
       if (abortSignal?.aborted) return;
       
-      const data = await response.json();
       if (data.success) {
         setLogs(data.logs || []);
         setFilteredLogs(data.logs || []);

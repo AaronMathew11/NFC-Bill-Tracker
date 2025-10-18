@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
+import { addBill, updateBillContent, checkDuplicate } from '../services/dbService';
 
 export default function AddBillForm({ editingBill = null, onSave = null }) {
   const { user } = useAuth();
@@ -76,17 +77,11 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
         formData.append('photo', draftData.photo);
       }
 
-      const url = isEditing 
-        ? `https://api-lyymlpizsa-uc.a.run.app/api/update-bill/${editingBill._id}`
-        : 'https://api-lyymlpizsa-uc.a.run.app/api/upload-bill';
+      const result = isEditing 
+        ? await updateBillContent(editingBill._id, formData)
+        : await addBill(formData);
       
-      const response = await fetch(url, {
-        method: isEditing ? 'PATCH' : 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (response.ok) {
+      if (result.success) {
         if (showAlert) {
           alert(isEditing ? 'Draft updated successfully!' : 'Draft saved successfully!');
         }
@@ -111,17 +106,12 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
 
   const checkForDuplicates = async (billData) => {
     try {
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/check-duplicate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          billDate: billData.billDate,
-          amount: billData.amount,
-          description: billData.description,
-          personName: billData.personName
-        })
+      const result = await checkDuplicate({
+        billDate: billData.billDate,
+        amount: billData.amount,
+        description: billData.description,
+        personName: billData.personName
       });
-      const result = await response.json();
       return result.isDuplicate;
     } catch (error) {
       console.error('Error checking duplicates:', error);
@@ -168,18 +158,11 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
         formData.append('photo', billData.photo);
       }
 
-      const url = isEditing 
-        ? `https://api-lyymlpizsa-uc.a.run.app/api/update-bill/${editingBill._id}`
-        : 'https://api-lyymlpizsa-uc.a.run.app/api/upload-bill';
+      const result = isEditing 
+        ? await updateBillContent(editingBill._id, formData)
+        : await addBill(formData);
 
-      const response = await fetch(url, {
-        method: isEditing ? 'PATCH' : 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         const message = billData.isDraft 
           ? (isEditing ? 'Draft updated successfully!' : 'Bill saved as draft!') 
           : (isEditing ? 'Bill updated successfully!' : 'Bill submitted successfully!');

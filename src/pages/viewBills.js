@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
+import { getAllBills, updateBillStatus } from '../services/dbService';
+import { sendEmailNotification, emailTemplates } from '../services/emailService';
 
 export default function ViewBills() {
   const { user } = useAuth();
@@ -26,13 +28,10 @@ export default function ViewBills() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/all-bills', {
-        signal: abortSignal
-      });
+      const data = await getAllBills();
       
       if (abortSignal?.aborted) return;
       
-      const data = await response.json();
       if (data.success) {
         const bills = data.bills.filter(bill => bill.status === 'pending');
         setPendingBills(bills);
@@ -70,21 +69,36 @@ export default function ViewBills() {
     }
 
     try {
-      const response = await fetch(`https://api-lyymlpizsa-uc.a.run.app/api/update-bill-status/${billId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, remark }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const result = await response.json();
+      const statusData = { 
+        status, 
+        remarks: remark,
+        adminId: userId,
+        adminName: user?.firstName || 'Admin'
+      };
+      
+      const result = await updateBillStatus(billId, statusData);
+      
       if (result.success) {
         setPendingBills((prevBills) => prevBills.filter((bill) => bill._id !== billId));
-        sendEmailNotification(selectedBill, status, remark);
         
-        // Add Date of Settlement for approved bills
-        if (status === 'approved') {
-          const settlementDate = new Date().toISOString().split('T')[0];
-          console.log(`Bill ${billId} approved with settlement date: ${settlementDate}`);
+        // Send proper email notification
+        try {
+          let emailData;
+          const userForEmail = { email: selectedBill.userEmail, firstName: selectedBill.personName };
+          
+          if (status === 'approved') {
+            emailData = emailTemplates.billApproved(selectedBill, userForEmail);
+          } else if (status === 'rejected') {
+            emailData = emailTemplates.billRejected(selectedBill, userForEmail, remark);
+          } else if (status === 'returned') {
+            emailData = emailTemplates.billNeedsUpdate(selectedBill, userForEmail, remark);
+          }
+          
+          if (emailData) {
+            await sendEmailNotification(emailData);
+          }
+        } catch (emailError) {
+          console.error('Error sending email notification:', emailError);
         }
         
         closeModal();
@@ -96,18 +110,6 @@ export default function ViewBills() {
     }
   }
 
-  function sendEmailNotification(bill, status, remark) {
-    // TODO: Implement email service integration
-    const emailData = {
-      to: bill.userEmail,
-      subject: `Bill ${status.charAt(0).toUpperCase() + status.slice(1)} - ${bill.description}`,
-      message: `Hello ${bill.personName}, your bill "${bill.description}" for ₹${bill.amount} has been ${status}.${remark ? `\nRemark: ${remark}` : ''}`
-    };
-    
-    console.log('Email notification would be sent:', emailData);
-    // For now, just show an alert
-    alert(`Email notification sent to user: Bill ${status}`);
-  }
 
   function onApproveClick() {
     setActionType('approved');

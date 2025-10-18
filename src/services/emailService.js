@@ -3,7 +3,7 @@
 // Use local API in development, deployed API in production
 const API_BASE = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:5000/api'  // Local development
-  : 'https://api-lyymlpizsa-uc.a.run.app/api'; // Firebase Functions deployment
+  : 'https://us-central1-nfc-finance-app.cloudfunctions.net/api'; // Firebase Functions deployment
 
 export const sendEmailNotification = async (emailData) => {
   try {

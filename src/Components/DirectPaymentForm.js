@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
+import { addDirectPayment } from '../services/dbService';
 
 export default function DirectPaymentForm() {
   const { user } = useAuth();
@@ -66,14 +67,9 @@ export default function DirectPaymentForm() {
         formData.append('photo', paymentData.photo);
       }
 
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/direct-payment', {
-        method: 'POST',
-        body: formData,
-      });
+      const result = await addDirectPayment(formData);
 
-      const result = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         alert('Direct payment logged successfully!');
         setPaymentData({
           entryDate: new Date().toISOString().split('T')[0],

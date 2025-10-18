@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Users } from 'lucide-react';
+import { getUsers } from '../services/dbService';
 
 export default function ViewUsers() {
   const { user } = useAuth();
@@ -21,13 +22,9 @@ export default function ViewUsers() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/users', {
-        signal: abortSignal
-      });
+      const data = await getUsers();
       
       if (abortSignal?.aborted) return;
-      
-      const data = await response.json();
       if (data.success) {
         setUsers(data.users || []);
       }

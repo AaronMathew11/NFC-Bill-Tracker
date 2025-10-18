@@ -3,6 +3,7 @@ import { Pie, Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
+import { getAllBills } from '../services/dbService';
 
 // Register chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
@@ -47,13 +48,9 @@ export default function Overview() {
     
     try {
       setLoading(true);
-      const response = await fetch('https://api-lyymlpizsa-uc.a.run.app/api/all-bills', {
-        signal: abortSignal
-      });
+      const data = await getAllBills();
       
       if (abortSignal?.aborted) return;
-      
-      const data = await response.json();
       if (data.success) {
         setAllBills(data.bills);
       }
