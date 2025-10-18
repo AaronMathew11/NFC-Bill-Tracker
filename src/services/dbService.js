@@ -3,7 +3,7 @@ import { withRetry, handleApiError } from '../utils/apiUtils';
 
 // Use local API in development, deployed API in production
 const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api'  // Local development
+  ? 'http://localhost:3001/api'  // Local development
   : 'https://us-central1-nfc-finance-app.cloudfunctions.net/api'; // Firebase Functions deployment
 
 console.log('API_BASE:', API_BASE);

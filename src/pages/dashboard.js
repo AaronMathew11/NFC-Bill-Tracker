@@ -130,7 +130,13 @@ export default function Dashboard() {
     if (statusFilter === 'drafts') {
       filteredBills = filteredBills.filter(bill => bill.isDraft);
     } else if (statusFilter !== 'all') {
-      filteredBills = filteredBills.filter(bill => !bill.isDraft && bill.status === statusFilter);
+      // For 'returned' status, include drafts because returned bills become drafts for editing
+      // For other statuses, exclude drafts
+      if (statusFilter === 'returned') {
+        filteredBills = filteredBills.filter(bill => bill.status === statusFilter);
+      } else {
+        filteredBills = filteredBills.filter(bill => !bill.isDraft && bill.status === statusFilter);
+      }
     } else {
       filteredBills = filteredBills.filter(bill => !bill.isDraft);
     }
@@ -161,11 +167,11 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate Request Counts by Status
+  // Calculate Request Counts by Status (consistent with filtering logic)
   const pendingCount = bills.filter((bill) => bill.status === 'pending' && !bill.isDraft).length;
-  const approvedCount = bills.filter((bill) => bill.status === 'approved').length;
-  const rejectedCount = bills.filter((bill) => bill.status === 'rejected').length;
-  const needsUpdateCount = bills.filter((bill) => bill.status === 'returned').length;
+  const approvedCount = bills.filter((bill) => bill.status === 'approved' && !bill.isDraft).length;
+  const rejectedCount = bills.filter((bill) => bill.status === 'rejected' && !bill.isDraft).length;
+  const needsUpdateCount = bills.filter((bill) => bill.status === 'returned').length; // Include drafts for returned bills
   const draftCount = bills.filter((bill) => bill.isDraft).length;
   const totalCount = bills.filter((bill) => !bill.isDraft).length;
 
