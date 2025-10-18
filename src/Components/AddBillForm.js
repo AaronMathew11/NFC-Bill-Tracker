@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
-import { addBill, updateBillContent, checkDuplicate } from '../services/dbService';
+import { addBill, addBillJson, updateBillContent, updateBillContentJson, checkDuplicate } from '../services/dbService';
 
 export default function AddBillForm({ editingBill = null, onSave = null }) {
   const { user } = useAuth();
@@ -31,7 +31,18 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
     isDraft: false,
   });
   const [photoPreview, setPhotoPreview] = useState(editingBill?.photoUrl || null);
+  const [photoBase64, setPhotoBase64] = useState(null);
   const [isEditing] = useState(!!editingBill);
+
+  // Helper function to convert file to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,12 +61,22 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
         quality: 0.6,  // Adjust the quality (0 to 1)
         maxWidth: 1024,  // Set maximum width
         maxHeight: 1024, // Set maximum height
-        success(result) {
-          setBillData((prev) => ({ ...prev, photo: result }));
+        success: async (result) => {
+          try {
+            // Convert compressed image to base64
+            const base64 = await fileToBase64(result);
+            setPhotoBase64(base64);
+            setBillData((prev) => ({ ...prev, photo: result }));
+          } catch (error) {
+            console.error('Failed to convert image to base64:', error);
+            setPhotoPreview(null);
+            setPhotoBase64(null);
+          }
         },
         error(err) {
           console.error('Image compression failed:', err);
           setPhotoPreview(null);
+          setPhotoBase64(null);
         },
       });
     }
@@ -63,23 +84,22 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
 
   const saveDraftBill = async (draftData, showAlert = true) => {
     try {
-      const formData = new FormData();
-      formData.append('entryDate', draftData.entryDate);
-      formData.append('billDate', draftData.billDate || '');
-      formData.append('category', draftData.category || '');
-      formData.append('isDraft', true);
-      formData.append('personName', draftData.personName || '');
-      formData.append('amount', draftData.amount || '0');
-      formData.append('type', draftData.type);
-      formData.append('description', draftData.description || '');
-      formData.append('userId', userId);
-      if (draftData.photo) {
-        formData.append('photo', draftData.photo);
-      }
+      const jsonData = {
+        entryDate: draftData.entryDate,
+        billDate: draftData.billDate || '',
+        category: draftData.category || '',
+        isDraft: true,
+        personName: draftData.personName || '',
+        amount: draftData.amount || '0',
+        type: draftData.type,
+        description: draftData.description || '',
+        userId: userId,
+        photoBase64: photoBase64
+      };
 
       const result = isEditing 
-        ? await updateBillContent(editingBill._id, formData)
-        : await addBill(formData);
+        ? await updateBillContentJson(editingBill._id, jsonData)
+        : await addBillJson(jsonData);
       
       if (result.success) {
         if (showAlert) {
@@ -144,23 +164,22 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('entryDate', billData.entryDate);
-      formData.append('billDate', billData.billDate);
-      formData.append('category', billData.category);
-      formData.append('isDraft', billData.isDraft);
-      formData.append('personName', billData.personName);
-      formData.append('amount', billData.amount);
-      formData.append('type', billData.type);
-      formData.append('description', billData.description);
-      formData.append('userId', userId);
-      if (billData.photo) {
-        formData.append('photo', billData.photo);
-      }
+      const jsonData = {
+        entryDate: billData.entryDate,
+        billDate: billData.billDate,
+        category: billData.category,
+        isDraft: billData.isDraft,
+        personName: billData.personName,
+        amount: billData.amount,
+        type: billData.type,
+        description: billData.description,
+        userId: userId,
+        photoBase64: photoBase64
+      };
 
       const result = isEditing 
-        ? await updateBillContent(editingBill._id, formData)
-        : await addBill(formData);
+        ? await updateBillContentJson(editingBill._id, jsonData)
+        : await addBillJson(jsonData);
 
       if (result.success) {
         const message = billData.isDraft 
@@ -348,6 +367,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
                       type="button"
                       onClick={() => {
                         setPhotoPreview(null);
+                        setPhotoBase64(null);
                         setBillData(prev => ({ ...prev, photo: null }));
                       }}
                       className="bg-red-100 text-red-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-200 transition"

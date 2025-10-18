@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
-import { addDirectPayment } from '../services/dbService';
+import { addDirectPayment, addDirectPaymentJson } from '../services/dbService';
 
 export default function DirectPaymentForm() {
   const { user } = useAuth();
@@ -19,6 +19,17 @@ export default function DirectPaymentForm() {
     photo: null,
   });
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoBase64, setPhotoBase64] = useState(null);
+
+  // Helper function to convert file to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,12 +47,22 @@ export default function DirectPaymentForm() {
         quality: 0.6,
         maxWidth: 1024,
         maxHeight: 1024,
-        success(result) {
-          setPaymentData((prev) => ({ ...prev, photo: result }));
+        success: async (result) => {
+          try {
+            // Convert compressed image to base64
+            const base64 = await fileToBase64(result);
+            setPhotoBase64(base64);
+            setPaymentData((prev) => ({ ...prev, photo: result }));
+          } catch (error) {
+            console.error('Failed to convert image to base64:', error);
+            setPhotoPreview(null);
+            setPhotoBase64(null);
+          }
         },
         error(err) {
           console.error('Image compression failed:', err);
           setPhotoPreview(null);
+          setPhotoBase64(null);
         },
       });
     }
@@ -51,23 +72,22 @@ export default function DirectPaymentForm() {
     e.preventDefault();
 
     try {
-      const formData = new FormData();
-      formData.append('entryDate', paymentData.entryDate);
-      formData.append('billDate', paymentData.billDate);
-      formData.append('vendorName', paymentData.vendorName);
-      formData.append('amount', paymentData.amount);
-      formData.append('description', paymentData.description);
-      formData.append('category', paymentData.category);
-      formData.append('type', 'debit'); // Direct payments are typically debits
-      formData.append('paymentType', 'direct');
-      formData.append('status', 'approved'); // Direct payments are auto-approved
-      formData.append('dateOfSettlement', new Date().toISOString().split('T')[0]);
-      formData.append('adminId', userId);
-      if (paymentData.photo) {
-        formData.append('photo', paymentData.photo);
-      }
+      const jsonData = {
+        entryDate: paymentData.entryDate,
+        billDate: paymentData.billDate,
+        vendorName: paymentData.vendorName,
+        amount: paymentData.amount,
+        description: paymentData.description,
+        category: paymentData.category,
+        type: 'debit', // Direct payments are typically debits
+        paymentType: 'direct',
+        status: 'approved', // Direct payments are auto-approved
+        dateOfSettlement: new Date().toISOString().split('T')[0],
+        adminId: userId,
+        photoBase64: photoBase64
+      };
 
-      const result = await addDirectPayment(formData);
+      const result = await addDirectPaymentJson(jsonData);
 
       if (result.success) {
         alert('Direct payment logged successfully!');
@@ -81,6 +101,7 @@ export default function DirectPaymentForm() {
           photo: null,
         });
         setPhotoPreview(null);
+        setPhotoBase64(null);
       } else {
         alert('Failed to log payment: ' + (result.message || 'Unknown error'));
       }
@@ -213,6 +234,7 @@ export default function DirectPaymentForm() {
                       type="button"
                       onClick={() => {
                         setPhotoPreview(null);
+                        setPhotoBase64(null);
                         setPaymentData(prev => ({ ...prev, photo: null }));
                       }}
                       className="bg-red-100 text-red-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-200 transition"

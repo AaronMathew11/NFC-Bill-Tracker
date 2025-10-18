@@ -3,8 +3,8 @@ import { withRetry, handleApiError } from '../utils/apiUtils';
 
 // Use local API in development, deployed API in production
 const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3001/api'  // Local development
-  : 'https://us-central1-nfc-finance-app.cloudfunctions.net/api'; // Firebase Functions deployment
+  ? 'http://localhost:5000/api'  // Local development
+  : 'https://api-lyymlpizsa-uc.a.run.app'; // Firebase Functions deployment
 
 console.log('API_BASE:', API_BASE);
 
@@ -24,6 +24,16 @@ axios.interceptors.response.use(
 // Add new bill (using upload-bill endpoint)
 export const addBill = async (billData) => {
   const res = await axios.post(`${API_BASE}/upload-bill`, billData);
+  return res.data;
+};
+
+// Add new bill with base64 image (JSON endpoint)
+export const addBillJson = async (billData) => {
+  const res = await axios.post(`${API_BASE}/upload-bill-json`, billData, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
   return res.data;
 };
 
@@ -60,6 +70,15 @@ export const updateBillContent = async (billId, billData) => {
   return res.data;
 };
 
+export const updateBillContentJson = async (billId, billData) => {
+  const res = await axios.patch(`${API_BASE}/update-bill-json/${billId}`, billData, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  return res.data;
+};
+
 export const deleteBill = async (billId) => {
   const res = await axios.delete(`${API_BASE}/delete-bill/${billId}`);
   return res.data;
@@ -72,6 +91,15 @@ export const checkDuplicate = async (billData) => {
 
 export const addDirectPayment = async (paymentData) => {
   const res = await axios.post(`${API_BASE}/direct-payment`, paymentData);
+  return res.data;
+};
+
+export const addDirectPaymentJson = async (paymentData) => {
+  const res = await axios.post(`${API_BASE}/direct-payment-json`, paymentData, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
   return res.data;
 };
 
