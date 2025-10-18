@@ -3,7 +3,7 @@ import { Pie, Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { getAllBills } from '../services/dbService';
+import { getAllBills, getLedger } from '../services/dbService';
 
 // Register chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
@@ -17,6 +17,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
+  const [ledgerBalance, setLedgerBalance] = useState(0);
   const [monthlyData, setMonthlyData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [pendingByUser, setPendingByUser] = useState([]);
@@ -50,11 +51,33 @@ export default function Overview() {
     
     try {
       setLoading(true);
-      const data = await getAllBills();
+      const [billsData, ledgerData] = await Promise.all([
+        getAllBills(),
+        getLedger()
+      ]);
       
       if (abortSignal?.aborted) return;
-      if (data.success) {
-        setAllBills(data.bills);
+      if (billsData.success) {
+        setAllBills(billsData.bills);
+        
+        // Debug: Compare our calculation with ledger's final balance
+        if (ledgerData.success && ledgerData.ledger.length > 0) {
+          const ledgerFinalBalance = ledgerData.ledger[ledgerData.ledger.length - 1].balance;
+          console.log('Ledger final balance:', ledgerFinalBalance);
+          setLedgerBalance(ledgerFinalBalance);
+          
+          const approvedBills = billsData.bills.filter(bill => bill.status === 'approved');
+          let calculatedBalance = 0;
+          approvedBills.forEach(bill => {
+            if (bill.type === 'debit') {
+              calculatedBalance -= Number(bill.amount);
+            } else if (bill.type === 'credit') {
+              calculatedBalance += Number(bill.amount);
+            }
+          });
+          console.log('Overview calculated balance:', calculatedBalance);
+          console.log('Total approved bills:', approvedBills.length);
+        }
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -136,7 +159,7 @@ export default function Overview() {
       }
     });
 
-    // Calculate total balance (all approved bills, unfiltered)
+    // Calculate total balance (all approved bills, matching ledger logic)
     const allApprovedBills = allBills.filter(bill => bill.status === 'approved');
     let updatedTotalBalance = 0;
     allApprovedBills.forEach(bill => {
