@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
@@ -8,6 +8,15 @@ import { addBillJson, updateBillContentJson, checkDuplicate } from '../services/
 export default function AddBillForm({ editingBill = null, onSave = null }) {
   const { user } = useAuth();
   const userId = useUserId();
+  
+  // Debug user object
+  console.log('AddBillForm - User object:', user);
+  console.log('AddBillForm - User email paths:', {
+    primaryEmailAddress: user?.primaryEmailAddress?.emailAddress,
+    directEmail: user?.email,
+    fullName: user?.fullName,
+    firstName: user?.firstName
+  });
 
   const [billData, setBillData] = useState(editingBill ? {
     entryDate: editingBill.entryDate ? new Date(editingBill.entryDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -33,6 +42,15 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
   const [photoPreview, setPhotoPreview] = useState(editingBill?.photoUrl || null);
   const [photoBase64, setPhotoBase64] = useState(null);
   const [isEditing] = useState(!!editingBill);
+
+  // Update personName when user object changes
+  useEffect(() => {
+    if (user && !isEditing) {
+      const userEmail = user?.primaryEmailAddress?.emailAddress || user?.email || '';
+      console.log('AddBillForm - Setting personName to:', userEmail);
+      setBillData(prev => ({ ...prev, personName: userEmail }));
+    }
+  }, [user, isEditing]);
 
   // Helper function to convert file to base64
   const fileToBase64 = (file) => {
