@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
-import { addBill, addBillJson, updateBillContent, updateBillContentJson, checkDuplicate } from '../services/dbService';
+import { addBillJson, updateBillContentJson, checkDuplicate } from '../services/dbService';
 
 export default function AddBillForm({ editingBill = null, onSave = null }) {
   const { user } = useAuth();

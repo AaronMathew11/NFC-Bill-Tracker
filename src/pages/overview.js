@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Pie, Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
@@ -9,7 +9,7 @@ import { getUserSubmittedBills, getLedger } from '../services/dbService';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
 export default function Overview() {
-  const { user } = useAuth();
+  const {} = useAuth();
   const userId = useUserId();
   
   const [allBills, setAllBills] = useState([]);
@@ -17,7 +17,6 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
-  const [ledgerBalance, setLedgerBalance] = useState(0);
   const [monthlyData, setMonthlyData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [pendingByUser, setPendingByUser] = useState([]);
@@ -248,27 +247,6 @@ export default function Overview() {
     return <div className="text-center mt-10 text-red-500">Failed to load statistics.</div>;
   }
 
-  const statusPieData = {
-    labels: ['Approved', 'Rejected'],
-    datasets: [
-      {
-        label: 'Bills Status',
-        data: [
-          statistics?.approvedBills?.length || 0,
-          statistics?.declinedBills?.length || 0,
-        ],
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.7)',
-          'rgba(239, 68, 68, 0.7)',
-        ],
-        borderColor: [
-          'rgba(34, 197, 94, 1)',
-          'rgba(239, 68, 68, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
 
   const monthlyLineData = {
     labels: monthlyData.map(([month]) => month),
@@ -283,41 +261,8 @@ export default function Overview() {
     ],
   };
 
-  const categoryBarData = {
-    labels: categoryData.slice(0, 8).map(([category]) => category),
-    datasets: [
-      {
-        label: 'Amount Spent',
-        data: categoryData.slice(0, 8).map(([, amount]) => amount),
-        backgroundColor: 'rgba(168, 85, 247, 0.7)',
-        borderColor: 'rgba(168, 85, 247, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
 
-  const pendingUserBarData = {
-    labels: pendingByUser.slice(0, 10).map(([user]) => user),
-    datasets: [
-      {
-        label: 'Pending Bills',
-        data: pendingByUser.slice(0, 10).map(([, count]) => count),
-        backgroundColor: 'rgba(245, 158, 11, 0.7)',
-        borderColor: 'rgba(245, 158, 11, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
 
-  const pieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-      },
-    },
-  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50">

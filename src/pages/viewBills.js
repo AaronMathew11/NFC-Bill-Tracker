@@ -170,7 +170,7 @@ export default function ViewBills() {
               {selectedBill.photoUrl ? (
                 <img
                   src={selectedBill.photoUrl}
-                  alt="Bill Image"
+                  alt="Receipt"
                   className="w-full h-auto rounded-lg object-contain mb-4"
                 />
               ) : (

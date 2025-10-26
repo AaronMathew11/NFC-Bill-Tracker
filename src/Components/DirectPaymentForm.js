@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
 import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
-import { addDirectPayment, addDirectPaymentJson } from '../services/dbService';
+import { addDirectPaymentJson } from '../services/dbService';
 
 export default function DirectPaymentForm() {
   const { user } = useAuth();
