@@ -129,7 +129,10 @@ export default function Overview() {
 
     if (startDate) {
       filtered = filtered.filter(bill => {
-        const billDate = new Date(bill.billDate || bill.entryDate);
+        // Use settlement date for approved bills, otherwise use bill date or entry date
+        // This ensures filtering is based on when the transaction was actually processed
+        const dateToUse = bill.dateOfSettlement || bill.billDate || bill.entryDate;
+        const billDate = new Date(dateToUse);
         
         // If date is invalid, include the bill (don't filter it out)
         if (isNaN(billDate.getTime())) {
@@ -218,7 +221,9 @@ export default function Overview() {
     const monthlyExpenses = {};
     bills.forEach(bill => {
       if (bill.type === 'debit') {
-        const month = new Date(bill.billDate || bill.entryDate).toLocaleString('default', { month: 'short', year: 'numeric' });
+        // Use settlement date for approved bills to show when money was actually spent
+        const dateToUse = bill.dateOfSettlement || bill.billDate || bill.entryDate;
+        const month = new Date(dateToUse).toLocaleString('default', { month: 'short', year: 'numeric' });
         monthlyExpenses[month] = (monthlyExpenses[month] || 0) + Number(bill.amount);
       }
     });
