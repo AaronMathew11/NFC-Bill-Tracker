@@ -31,14 +31,28 @@ export default function ViewBills() {
       
       // Admins should see all pending bills, users see only their own
       const isAdmin = user?.role === 'admin' || user?.publicMetadata?.role === 'admin';
+      console.log('ViewBills - User role check:', { isAdmin, userRole: user?.role, publicRole: user?.publicMetadata?.role });
+      
       const data = isAdmin ? await getAllBills() : await getUserSubmittedBills();
       
       if (abortSignal?.aborted) return;
       
       if (data.success) {
+        console.log('ViewBills - Fetched bills data:', { 
+          totalBills: data.bills.length, 
+          source: isAdmin ? 'getAllBills' : 'getUserSubmittedBills',
+          allStatuses: [...new Set(data.bills.map(b => b.status))],
+          billsByStatus: {
+            pending: data.bills.filter(b => b.status === 'pending').length,
+            approved: data.bills.filter(b => b.status === 'approved').length,
+            rejected: data.bills.filter(b => b.status === 'rejected').length,
+            other: data.bills.filter(b => !['pending', 'approved', 'rejected'].includes(b.status)).length
+          }
+        });
+        
         const bills = data.bills.filter(bill => bill.status === 'pending');
         setPendingBills(bills);
-        console.log(`Fetched ${bills.length} pending bills for ${isAdmin ? 'admin' : 'user'}`);
+        console.log(`ViewBills - Filtered to ${bills.length} pending bills for ${isAdmin ? 'admin' : 'user'}`);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {

@@ -3,13 +3,13 @@ import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { getUserSubmittedBills, getLedger } from '../services/dbService';
+import { getUserSubmittedBills, getAllBills, getLedger } from '../services/dbService';
 
 // Register chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
 export default function Overview() {
-  useAuth();
+  const { user } = useAuth();
   const userId = useUserId();
   
   const [allBills, setAllBills] = useState([]);
@@ -43,20 +43,30 @@ export default function Overview() {
       billType: '',
       status: ''
     });
-  }, [userId]);
+  }, [userId, user]);
 
   const fetchStatistics = useCallback(async (abortSignal) => {
-    if (!userId) return;
+    if (!userId || !user) return;
     
     try {
       setLoading(true);
+      
+      // Use same logic as ViewBills: admins get all bills, users get their own
+      const isAdmin = user?.role === 'admin' || user?.publicMetadata?.role === 'admin';
+      console.log('Overview - User role check:', { isAdmin, userRole: user?.role, publicRole: user?.publicMetadata?.role });
+      
       const [billsData, ledgerData] = await Promise.all([
-        getUserSubmittedBills(),
+        isAdmin ? getAllBills() : getUserSubmittedBills(),
         getLedger()
       ]);
       
       if (abortSignal?.aborted) return;
       if (billsData.success) {
+        console.log('Overview - Fetched bills data:', { 
+          totalBills: billsData.bills.length, 
+          source: isAdmin ? 'getAllBills' : 'getUserSubmittedBills',
+          pendingCount: billsData.bills.filter(b => b.status === 'pending').length
+        });
         setAllBills(billsData.bills);
         
         // Calculate statistics from user-submitted bills
@@ -89,7 +99,7 @@ export default function Overview() {
         setLoading(false);
       }
     }
-  }, [userId]);
+  }, [userId, user]);
 
   useEffect(() => {
     const abortController = new AbortController();
