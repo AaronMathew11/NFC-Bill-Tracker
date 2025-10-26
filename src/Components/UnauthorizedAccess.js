@@ -1,11 +1,15 @@
 import { AlertTriangle, Mail } from 'lucide-react';
-import { useClerk } from '@clerk/clerk-react';
+import { firebaseSignOut } from '../firebase';
 
 export default function UnauthorizedAccess({ userEmail }) {
-  const { signOut } = useClerk();
-
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut();
+      // React Router will automatically redirect to login via useAuth hook
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Still let React Router handle redirect even on error
+    }
   };
 
   return (

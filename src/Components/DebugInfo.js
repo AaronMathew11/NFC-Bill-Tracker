@@ -1,9 +1,7 @@
-import { useUser, useAuth, useClerk } from '@clerk/clerk-react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function DebugInfo() {
-  const { user, isSignedIn, isLoaded } = useUser();
-  const { isSignedIn: authSignedIn } = useAuth();
-  const clerk = useClerk();
+  const { user, isSignedIn, authType, loading } = useAuth();
 
   if (process.env.NODE_ENV !== 'development') {
     return null;
@@ -11,20 +9,20 @@ export default function DebugInfo() {
 
   return (
     <div className="fixed bottom-4 right-4 bg-black bg-opacity-80 text-white p-4 rounded-lg text-xs max-w-sm">
-      <h3 className="font-bold mb-2">🔧 Debug Info</h3>
+      <h3 className="font-bold mb-2">🔥 Firebase Debug Info</h3>
       <div className="space-y-1">
-        <div>User Loaded: {isLoaded ? '✅' : '❌'}</div>
-        <div>Is Signed In (useUser): {isSignedIn ? '✅' : '❌'}</div>
-        <div>Is Signed In (useAuth): {authSignedIn ? '✅' : '❌'}</div>
-        <div>Clerk Instance: {clerk ? '✅' : '❌'}</div>
+        <div>Loading: {loading ? '⏳' : '✅'}</div>
+        <div>Is Signed In: {isSignedIn ? '✅' : '❌'}</div>
+        <div>Auth Type: {authType}</div>
         {user && (
           <>
             <div>Email: {user.primaryEmailAddress?.emailAddress || 'N/A'}</div>
             <div>Name: {user.firstName} {user.lastName}</div>
             <div>User ID: {user.id}</div>
+            <div>Role: {user.publicMetadata?.role || 'N/A'}</div>
           </>
         )}
-        <div>Publishable Key: {process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅' : '❌'}</div>
+        <div>Firebase Config: {process.env.REACT_APP_FIREBASE_API_KEY ? '✅' : '❌'}</div>
       </div>
     </div>
   );

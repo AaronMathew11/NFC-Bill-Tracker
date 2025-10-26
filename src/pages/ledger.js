@@ -197,20 +197,26 @@ export default function Ledger() {
 
   const exportLedger = (format = 'csv') => {
     const headers = [
-      'Entry Date', 'Date of Settlement', 'Bill Date', 'Description', 
-      'Credit (INR)', 'Debit (INR)', 'Balance', 'Remarks', 'Bill Softcopy'
+      'Bill ID', 'Entry Date', 'Date of Settlement', 'Bill Date', 'Description', 
+      'Raised By', 'Approved By', 'Credit (INR)', 'Debit (INR)', 'Balance', 
+      'Category', 'Payment Type', 'Remarks', 'Bill Softcopy'
     ];
     
     const csvContent = [
       headers,
       ...filteredData.map(entry => [
+        entry.billId?.slice(-8) || 'N/A',
         formatDate(entry.entryDate),
         formatDate(entry.dateOfSettlement),
         formatDate(entry.billDate),
         entry.description || '',
+        entry.raisedBy || '',
+        entry.approvedBy || '',
         entry.type === 'credit' ? entry.amount : '',
         entry.type === 'debit' ? entry.amount : '',
         entry.balance || '',
+        entry.category || '',
+        entry.paymentType || '',
         entry.remarks || '',
         entry.billSoftcopyUrl || ''
       ])
@@ -404,10 +410,13 @@ export default function Ledger() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill ID</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry Date</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Settlement</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bill Date</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raised By</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved By</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Debit</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
@@ -417,6 +426,11 @@ export default function Ledger() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredData.map((entry, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                            {entry.billId?.slice(-8) || 'N/A'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {formatDate(entry.entryDate)}
                         </td>
@@ -430,6 +444,16 @@ export default function Ledger() {
                           <div className="truncate" title={entry.description}>
                             {entry.description || '-'}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <span className="text-blue-600 font-medium">
+                            {entry.raisedBy || entry.personName || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <span className="text-green-600 font-medium">
+                            {entry.approvedBy || 'Admin'}
+                          </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold">
                           {entry.type === 'credit' ? (
@@ -610,7 +634,11 @@ export default function Ledger() {
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {log.entityId || '-'}
+                          {log.entityId ? (
+                            <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                              {log.entityId.slice(-8)}
+                            </span>
+                          ) : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
                           <div className="truncate" title={log.oldValue && log.newValue ? `${log.oldValue} → ${log.newValue}` : log.details}>

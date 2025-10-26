@@ -1,9 +1,7 @@
 // Email notification service for bill status updates
 
-// Use local API in development, deployed API in production
-const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api'  // Local development
-  : 'https://api-lyymlpizsa-uc.a.run.app'; // Firebase Functions deployment
+// Use Firebase Functions deployment for all environments
+const API_BASE = 'https://api-lyymlpizsa-uc.a.run.app';
 
 export const sendEmailNotification = async (emailData) => {
   try {

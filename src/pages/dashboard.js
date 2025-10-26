@@ -1,24 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import AddBillForm from '../Components/AddBillForm';
-import { useClerk } from '@clerk/clerk-react';
-import { useAuth } from '../hooks/useAuth';
-import { useUserId } from '../hooks/useUserId';
-import { useDevMode } from '../contexts/DevModeContext';
+import { useAuth, useUserId } from '../hooks/useAuth';
+import { firebaseSignOut } from '../firebase';
 import { getUserBills, getUserReturnedBills, deleteBill } from '../services/dbService';
 import { Home, Plus, FileText, User, Search, Filter, ChevronDown } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, authType } = useAuth();
   const userId = useUserId();
-  const { signOut: clerkSignOut } = useClerk();
-  const { signOut: devSignOut, isDevMode } = useDevMode();
 
-  const handleSignOut = () => {
-    if (isDevMode) {
-      devSignOut();
-      window.location.href = '/login';
-    } else {
-      clerkSignOut();
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut();
+      // React Router will automatically redirect to login via useAuth hook
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Still let React Router handle redirect even on error
     }
   };
 
@@ -31,6 +28,8 @@ export default function Dashboard() {
   const dropdownRef = useRef(null);
 
   const firstName = user?.firstName || 'User';
+  
+  console.log('Dashboard - User data:', { user, userId, authType });
 
   useEffect(() => {
     // Reset state when user changes

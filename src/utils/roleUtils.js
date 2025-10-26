@@ -20,8 +20,8 @@ export function getUserRole(email) {
 export function isAuthorizedUser(email) {
   if (!email) return false;
   
-  // Allow all gmail addresses for now, but you can restrict further if needed
-  const allowedDomains = ['gmail.com'];
+  // Allow gmail and hyperverge domains
+  const allowedDomains = ['gmail.com', 'hyperverge.co'];
   const emailDomain = email.toLowerCase().split('@')[1];
   
   return allowedDomains.includes(emailDomain) || isAdminUser(email);

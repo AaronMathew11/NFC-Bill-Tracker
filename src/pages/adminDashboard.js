@@ -2,23 +2,22 @@ import React, { useState } from 'react';
 import ViewBills from './viewBills';
 import Overview from './overview';
 import DirectPaymentForm from '../Components/DirectPaymentForm';
+import DirectPaymentApprovals from './directPaymentApprovals';
 import Ledger from './ledger';
-import { BarChart3, FileText, CreditCard, Book, User } from 'lucide-react';
-import { useClerk } from '@clerk/clerk-react';
-import { useDevMode } from '../contexts/DevModeContext';
+import { BarChart3, FileText, CreditCard, Book, User, CheckCircle } from 'lucide-react';
+import { firebaseSignOut } from '../firebase';
 
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const { signOut: clerkSignOut } = useClerk();
-  const { signOut: devSignOut, isDevMode } = useDevMode();
 
-  const handleSignOut = () => {
-    if (isDevMode) {
-      devSignOut();
-      window.location.href = '/login';
-    } else {
-      clerkSignOut();
+  const handleSignOut = async () => {
+    try {
+      await firebaseSignOut();
+      // React Router will automatically redirect to login via useAuth hook
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Still let React Router handle redirect even on error
     }
   };
 
@@ -26,6 +25,7 @@ export default function AdminDashboard() {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'viewBills', label: 'Bills', icon: FileText },
     { id: 'directPayments', label: 'Pay', icon: CreditCard },
+    { id: 'approvePayments', label: 'Approve', icon: CheckCircle },
     { id: 'ledger', label: 'Ledger', icon: Book }
   ];
 
@@ -52,10 +52,11 @@ export default function AdminDashboard() {
         {activeTab === 'overview' && <Overview />}
         {activeTab === 'viewBills' && <ViewBills />}
         {activeTab === 'directPayments' && <DirectPaymentForm />}
+        {activeTab === 'approvePayments' && <DirectPaymentApprovals />}
         {activeTab === 'ledger' && <Ledger />}
       </div>
 
-      {/* Bottom Navigation - 4 items */}
+      {/* Bottom Navigation - 5 items */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 safe-area-pb">
         <div className="flex justify-around items-center px-1 py-2">
           {navItems.map((item) => {

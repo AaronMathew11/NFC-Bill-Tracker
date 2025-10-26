@@ -2,18 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { ClerkProvider, PUBLISHABLE_KEY } from './clerk';
-import { DevModeProvider } from './contexts/DevModeContext';
 import { BrowserRouter } from 'react-router-dom';
-
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <DevModeProvider>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </ClerkProvider>
-  </DevModeProvider>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );

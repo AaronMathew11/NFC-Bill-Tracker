@@ -1,10 +1,8 @@
 import axios from 'axios';
 import { withRetry, handleApiError } from '../utils/apiUtils';
 
-// Use local API in development, deployed API in production
-const API_BASE = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api'  // Local development
-  : 'https://api-lyymlpizsa-uc.a.run.app'; // Firebase Functions deployment
+// Use Firebase Functions deployment for all environments
+const API_BASE = 'https://api-lyymlpizsa-uc.a.run.app';
 
 console.log('API_BASE:', API_BASE);
 
@@ -115,5 +113,17 @@ export const getEventLogs = async () => {
 
 export const getUsers = async () => {
   const res = await axios.get(`${API_BASE}/users`);
+  return res.data;
+};
+
+// Get pending direct payments for approval (excludes payments created by the requesting admin)
+export const getPendingDirectPayments = async (adminId) => {
+  const res = await axios.get(`${API_BASE}/pending-direct-payments/${adminId}`);
+  return res.data;
+};
+
+// Get user-submitted bills for admin review (excludes direct payments from admins)
+export const getUserSubmittedBills = async () => {
+  const res = await axios.get(`${API_BASE}/user-submitted-bills`);
   return res.data;
 };

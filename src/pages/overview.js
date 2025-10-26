@@ -3,7 +3,7 @@ import { Pie, Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement } from 'chart.js';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { getAllBills, getLedger } from '../services/dbService';
+import { getUserSubmittedBills, getLedger } from '../services/dbService';
 
 // Register chart components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
@@ -52,7 +52,7 @@ export default function Overview() {
     try {
       setLoading(true);
       const [billsData, ledgerData] = await Promise.all([
-        getAllBills(),
+        getUserSubmittedBills(),
         getLedger()
       ]);
       
@@ -60,6 +60,26 @@ export default function Overview() {
       if (billsData.success) {
         setAllBills(billsData.bills);
         
+        // Calculate statistics from user-submitted bills
+        const totalBills = billsData.bills.length;
+        const approvedBills = billsData.bills.filter(bill => bill.status === 'approved');
+        const declinedBills = billsData.bills.filter(bill => bill.status === 'rejected');
+        const pendingBills = billsData.bills.filter(bill => bill.status === 'pending');
+        
+        setStatistics({
+          success: true,
+          bills: billsData.bills,
+          totalBills,
+          approvedBills: ledgerData.success ? ledgerData.ledger.slice().reverse() : approvedBills, // Use ledger for recent transactions
+          declinedBills,
+          pendingBills,
+          statistics: {
+            totalBills,
+            approvedBills: approvedBills.length,
+            declinedBills: declinedBills.length,
+            pendingBills: pendingBills.length
+          }
+        });
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -234,8 +254,8 @@ export default function Overview() {
       {
         label: 'Bills Status',
         data: [
-          statistics.approvedBills.length,
-          statistics.declinedBills.length,
+          statistics?.approvedBills?.length || 0,
+          statistics?.declinedBills?.length || 0,
         ],
         backgroundColor: [
           'rgba(34, 197, 94, 0.7)',
@@ -521,33 +541,35 @@ export default function Overview() {
           <span className="text-xs text-gray-500">Last 10 bills</span>
         </div>
         <div className="space-y-3">
-          {statistics.approvedBills.slice(0, 8).map((bill) => (
-            <div key={bill._id} className="flex items-center space-x-4 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition">
+          {statistics?.approvedBills?.slice(0, 8).map((transaction, index) => (
+            <div key={index} className="flex items-center space-x-4 p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                bill.type === 'credit' ? 'bg-green-100' : 'bg-red-100'
+                transaction.type === 'credit' ? 'bg-green-100' : 'bg-red-100'
               }`}>
                 <div className={`w-6 h-6 rounded-full ${
-                  bill.type === 'credit' ? 'bg-green-500' : 'bg-red-500'
+                  transaction.type === 'credit' ? 'bg-green-500' : 'bg-red-500'
                 }`}></div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{bill.description}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{transaction.description}</p>
                 <div className="flex items-center space-x-2 mt-1">
-                  <p className="text-xs text-gray-500">{bill.personName || bill.vendorName}</p>
+                  <p className="text-xs text-blue-600 font-medium">{transaction.raisedBy || transaction.personName}</p>
                   <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                  <p className="text-xs text-gray-500">{new Date(bill.billDate || bill.entryDate).toLocaleDateString()}</p>
+                  <p className="text-xs text-green-600 font-medium">by {transaction.approvedBy}</p>
+                  <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+                  <p className="text-xs text-gray-500">{new Date(transaction.billDate || transaction.entryDate).toLocaleDateString()}</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className={`text-sm font-bold ${
-                  bill.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                <p className={`text-sm font-bold ${
+                  transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {bill.type === 'credit' ? '+' : '-'}₹{Number(bill.amount).toLocaleString()}
-                </div>
+                  {transaction.type === 'credit' ? '+' : '-'}₹{Number(transaction.amount).toLocaleString()}
+                </p>
                 <div className={`text-xs px-2 py-1 rounded-full mt-1 ${
-                  bill.paymentType === 'direct' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                  transaction.paymentType === 'direct' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                 }`}>
-                  {bill.paymentType === 'direct' ? 'Direct' : 'Reimb'}
+                  {transaction.paymentType === 'direct' ? 'Direct' : 'Reimb'}
                 </div>
               </div>
             </div>
@@ -555,7 +577,7 @@ export default function Overview() {
         </div>
       </div>
 
-      {statistics.approvedBills.length === 0 && (
+      {(!statistics?.approvedBills || statistics.approvedBills.length === 0) && (
         <div className="text-center text-gray-500 mt-6">No approved bills to display.</div>
       )}
     </div>

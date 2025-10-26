@@ -299,38 +299,24 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
             />
           </div>
 
-          {/* Category and Type */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select
-                name="category"
-                value={billData.category}
-                onChange={handleChange}
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
-              >
-                <option value="">Select Category</option>
-                <option value="Events">Events</option>
-                <option value="Supplies">Supplies</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Travel">Travel</option>
-                <option value="Food">Food</option>
-                <option value="Utilities">Utilities</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <select
-                name="type"
-                value={billData.type}
-                onChange={handleChange}
-                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
-              >
-                <option value="debit">Debit</option>
-                <option value="credit">Credit</option>
-              </select>
-            </div>
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <select
+              name="category"
+              value={billData.category}
+              onChange={handleChange}
+              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+            >
+              <option value="">Select Category</option>
+              <option value="Events">Events</option>
+              <option value="Supplies">Supplies</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Travel">Travel</option>
+              <option value="Food">Food</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
           {/* Description Input */}

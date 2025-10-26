@@ -81,16 +81,17 @@ export default function DirectPaymentForm() {
         category: paymentData.category,
         type: 'debit', // Direct payments are typically debits
         paymentType: 'direct',
-        status: 'approved', // Direct payments are auto-approved
+        status: 'pending', // Direct payments require approval from another admin
         dateOfSettlement: new Date().toISOString().split('T')[0],
         adminId: userId,
+        adminName: user?.firstName || user?.fullName || 'Admin',
         photoBase64: photoBase64
       };
 
       const result = await addDirectPaymentJson(jsonData);
 
       if (result.success) {
-        alert('Direct payment logged successfully!');
+        alert('Direct payment logged successfully! It requires approval from another admin before appearing in the ledger.');
         setPaymentData({
           entryDate: new Date().toISOString().split('T')[0],
           billDate: '',
@@ -115,7 +116,12 @@ export default function DirectPaymentForm() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Log Direct Payment</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Log Direct Payment</h2>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-blue-800">
+            <span className="font-medium">Note:</span> Direct payments require approval from another admin before they appear in the ledger and affect the balance.
+          </p>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Date Fields */}

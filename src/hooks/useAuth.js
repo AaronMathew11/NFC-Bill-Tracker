@@ -1,51 +1,79 @@
-import { useUser } from '@clerk/clerk-react';
-import { useDevMode } from '../contexts/DevModeContext';
-import { enhanceUserWithRole, isAuthorizedUser } from '../utils/roleUtils';
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
+import { isAuthorizedUser, enhanceUserWithRole } from '../utils/roleUtils';
 
 export function useAuth() {
-  const { user: clerkUser, isSignedIn } = useUser();
-  const { devUser, isDevMode } = useDevMode();
+  const [user, setUser] = useState(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Priority: Dev Mode (for testing) > Google Auth via Clerk
-  if (isDevMode && devUser) {
-    return {
-      user: devUser,
-      isSignedIn: true,
-      isDevMode: true,
-      authType: 'dev'
-    };
-  }
-
-  // Google authentication via Clerk
-  if (isSignedIn && clerkUser) {
-    const email = clerkUser.primaryEmailAddress?.emailAddress;
+  useEffect(() => {
+    console.log('useAuth: Setting up Firebase auth listener');
     
-    // Check if user is authorized
-    if (!isAuthorizedUser(email)) {
-      return {
-        user: clerkUser,
-        isSignedIn: false,
-        isDevMode: false,
-        authType: 'unauthorized',
-        error: 'You are not authorized to access this application'
-      };
-    }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log('🔥 Firebase auth state changed:', { 
+        user: firebaseUser, 
+        email: firebaseUser?.email,
+        uid: firebaseUser?.uid 
+      });
+      
+      if (firebaseUser) {
+        const email = firebaseUser.email;
+        console.log('📧 Checking authorization for email:', email);
+        
+        // Check if user is authorized
+        if (!isAuthorizedUser(email)) {
+          console.log('❌ User not authorized:', email);
+          setUser(firebaseUser);
+          setIsSignedIn(false);
+          setLoading(false);
+          return;
+        }
 
-    // Enhance user with role information
-    const enhancedUser = enhanceUserWithRole(clerkUser);
-    
-    return {
-      user: enhancedUser,
-      isSignedIn: true,
-      isDevMode: false,
-      authType: 'google'
-    };
-  }
+        console.log('✅ User authorized, creating app user object');
+        
+        // Create a user object compatible with existing app
+        const appUser = {
+          id: firebaseUser.uid,
+          primaryEmailAddress: {
+            emailAddress: email
+          },
+          firstName: firebaseUser.displayName?.split(' ')[0] || 'User',
+          lastName: firebaseUser.displayName?.split(' ')[1] || '',
+          fullName: firebaseUser.displayName || email,
+          photoURL: firebaseUser.photoURL
+        };
+
+        // Enhance user with role information
+        const enhancedUser = enhanceUserWithRole(appUser);
+        console.log('👤 Enhanced user:', enhancedUser);
+        
+        setUser(enhancedUser);
+        setIsSignedIn(true);
+        console.log('✅ User signed in successfully');
+      } else {
+        console.log('🚪 User signed out');
+        setUser(null);
+        setIsSignedIn(false);
+      }
+      
+      setLoading(false);
+      console.log('⏹️ Auth loading complete');
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return {
-    user: null,
-    isSignedIn: false,
-    isDevMode: false,
-    authType: 'none'
+    user,
+    isSignedIn,
+    loading,
+    authType: isSignedIn ? 'firebase' : user ? 'unauthorized' : 'none'
   };
+}
+
+export function useUserId() {
+  const { user } = useAuth();
+  return user?.publicMetadata?.id || user?.id || null;
 }

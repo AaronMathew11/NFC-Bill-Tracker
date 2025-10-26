@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { getAllBills, updateBillStatus } from '../services/dbService';
+import { getUserSubmittedBills, updateBillStatus } from '../services/dbService';
 import { sendEmailNotification, emailTemplates } from '../services/emailService';
 
 export default function ViewBills() {
@@ -28,7 +28,7 @@ export default function ViewBills() {
     
     try {
       setLoading(true);
-      const data = await getAllBills();
+      const data = await getUserSubmittedBills();
       
       if (abortSignal?.aborted) return;
       
@@ -156,8 +156,8 @@ export default function ViewBills() {
 
       {/* Modal for showing bill details */}
       {selectedBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-11/12 max-w-lg relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white p-4 sm:p-6 rounded-lg w-full max-w-lg relative overflow-hidden max-h-[90vh] overflow-y-auto">
             <button
               onClick={closeModal}
               className="absolute top-2 right-2 text-gray-600 text-lg font-bold"
@@ -204,30 +204,30 @@ export default function ViewBills() {
 
             {/* Action Buttons */}
             {!actionType ? (
-              <div className="mt-4 flex justify-between gap-2">
+              <div className="mt-4 flex flex-col sm:flex-row justify-between gap-2">
                 <button
-                  className="flex-1 bg-green-500 text-white py-2 px-3 rounded text-sm"
+                  className="flex-1 bg-green-500 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
                   onClick={onApproveClick}
                 >
                   Approve
                 </button>
                 <button
-                  className="flex-1 bg-yellow-500 text-white py-2 px-3 rounded text-sm"
+                  className="flex-1 bg-yellow-500 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors"
                   onClick={onReturnClick}
                 >
                   Return
                 </button>
                 <button
-                  className="flex-1 bg-red-500 text-white py-2 px-3 rounded text-sm"
+                  className="flex-1 bg-red-500 text-white py-3 px-4 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
                   onClick={onRejectClick}
                 >
                   Decline
                 </button>
               </div>
             ) : (
-              <div className="mt-4 flex justify-center gap-4">
+              <div className="mt-4 flex justify-center">
                 <button
-                  className="bg-blue-600 text-white py-2 px-6 rounded"
+                  className="w-full sm:w-auto bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   onClick={() => handleUpdateStatus(selectedBill._id, actionType)}
                 >
                   Confirm {actionType === 'approved' ? 'Approval' : actionType === 'rejected' ? 'Rejection' : 'Return for Update'}

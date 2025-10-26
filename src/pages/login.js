@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import SimpleGoogleAuth from '../Components/SimpleGoogleAuth';
-import DevModeAuth from '../Components/DevModeAuth';
+import React from 'react';
+import FirebaseAuth from '../Components/FirebaseAuth';
 import DebugInfo from '../Components/DebugInfo';
-import { FileText, Code } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 export default function Login() {
-  const [showDevMode, setShowDevMode] = useState(false);
+  console.log('Login page - Firebase Auth only');
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 overflow-y-auto">
@@ -25,46 +24,9 @@ export default function Login() {
         </div>
 
         <div className="w-full max-w-sm">
-          {/* Mode Toggle */}
-          <div className="mb-6 text-center">
-            <div className="inline-flex bg-white rounded-lg p-0.5 shadow-sm border border-gray-200">
-              <button
-                onClick={() => setShowDevMode(false)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all ${
-                  !showDevMode 
-                    ? 'bg-blue-500 text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <FileText className="w-3 h-3" />
-                Google Login
-              </button>
-              <button
-                onClick={() => setShowDevMode(true)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-medium transition-all ${
-                  showDevMode 
-                    ? 'bg-orange-500 text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Code className="w-3 h-3" />
-                Dev Mode
-              </button>
-            </div>
-          </div>
-
-          {/* Conditional Rendering */}
-          {showDevMode ? (
-            <DevModeAuth />
-          ) : (
-            <SimpleGoogleAuth />
-          )}
+          <FirebaseAuth />
         </div>
 
-        {/* Footer */}
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>Secure financial management for your church</p>
-        </div>
       </div>
       
       {/* Debug Info */}
