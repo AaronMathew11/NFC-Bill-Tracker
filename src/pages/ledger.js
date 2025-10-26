@@ -5,7 +5,7 @@ import { useUserId } from '../hooks/useUserId';
 import { getLedger, getEventLogs } from '../services/dbService';
 
 export default function Ledger() {
-  const {} = useAuth();
+  useAuth();
   const userId = useUserId();
   
   const [activeTab, setActiveTab] = useState('ledger');

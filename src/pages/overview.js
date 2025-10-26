@@ -9,7 +9,7 @@ import { getUserSubmittedBills, getLedger } from '../services/dbService';
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement, BarElement);
 
 export default function Overview() {
-  const {} = useAuth();
+  useAuth();
   const userId = useUserId();
   
   const [allBills, setAllBills] = useState([]);
