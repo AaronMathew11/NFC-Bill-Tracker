@@ -12,7 +12,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
   const [billData, setBillData] = useState(editingBill ? {
     entryDate: editingBill.entryDate ? new Date(editingBill.entryDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     billDate: editingBill.billDate ? new Date(editingBill.billDate).toISOString().split('T')[0] : '',
-    personName: editingBill.personName || user?.fullName || user?.firstName || '',
+    personName: editingBill.personName || user?.primaryEmailAddress?.emailAddress || user?.email || '',
     amount: editingBill.amount || '',
     type: editingBill.type || 'debit',
     description: editingBill.description || '',
@@ -22,7 +22,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
   } : {
     entryDate: new Date().toISOString().split('T')[0],
     billDate: '',
-    personName: user?.fullName || user?.firstName || '',
+    personName: user?.primaryEmailAddress?.emailAddress || user?.email || '',
     amount: '',
     type: 'debit',
     description: '',
@@ -199,7 +199,7 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
           setBillData({
             entryDate: new Date().toISOString().split('T')[0],
             billDate: '',
-            personName: '',
+            personName: user?.primaryEmailAddress?.emailAddress || user?.email || '',
             amount: '',
             type: 'debit',
             description: '',
@@ -263,20 +263,19 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
 
           {/* Person Name Input */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Person Name</label>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Submitted By</label>
             <input
               type="text"
               name="personName"
-              placeholder="Enter person name"
               value={billData.personName}
-              onChange={handleChange}
-              className="w-full p-4 rounded-xl focus:ring-2 focus:border-transparent outline-none"
+              readOnly
+              className="w-full p-4 rounded-xl outline-none cursor-not-allowed"
               style={{
-                backgroundColor: 'var(--bg-glass)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-primary)',
-                focusRingColor: 'var(--accent-primary)'
+                backgroundColor: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                color: '#6b7280'
               }}
+              title="This field is automatically filled with your email address"
             />
           </div>
 
