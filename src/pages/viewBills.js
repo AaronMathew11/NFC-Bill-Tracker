@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { getUserSubmittedBills, updateBillStatus } from '../services/dbService';
+import { getUserSubmittedBills, getAllBills, updateBillStatus } from '../services/dbService';
 import { sendEmailNotification, emailTemplates } from '../services/emailService';
 
 export default function ViewBills() {
@@ -21,20 +21,24 @@ export default function ViewBills() {
     setRemark('');
     setActionType('');
     setLoading(true);
-  }, [userId]);
+  }, [userId, user]);
 
   const fetchBills = useCallback(async (abortSignal) => {
-    if (!userId) return;
+    if (!userId || !user) return;
     
     try {
       setLoading(true);
-      const data = await getUserSubmittedBills();
+      
+      // Admins should see all pending bills, users see only their own
+      const isAdmin = user?.role === 'admin' || user?.publicMetadata?.role === 'admin';
+      const data = isAdmin ? await getAllBills() : await getUserSubmittedBills();
       
       if (abortSignal?.aborted) return;
       
       if (data.success) {
         const bills = data.bills.filter(bill => bill.status === 'pending');
         setPendingBills(bills);
+        console.log(`Fetched ${bills.length} pending bills for ${isAdmin ? 'admin' : 'user'}`);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
@@ -45,7 +49,7 @@ export default function ViewBills() {
         setLoading(false);
       }
     }
-  }, [userId]);
+  }, [userId, user]);
 
   useEffect(() => {
     const abortController = new AbortController();
