@@ -14,6 +14,7 @@ export default function DirectPaymentForm() {
     billDate: '',
     vendorName: '',
     amount: '',
+    type: 'debit', // Default to debit, admin can change to credit
     description: '',
     category: '',
     photo: null,
@@ -79,7 +80,7 @@ export default function DirectPaymentForm() {
         amount: paymentData.amount,
         description: paymentData.description,
         category: paymentData.category,
-        type: 'debit', // Direct payments are typically debits
+        type: paymentData.type, // Admin-selected debit or credit
         paymentType: 'direct',
         status: 'pending', // Direct payments require approval from another admin
         dateOfSettlement: new Date().toISOString().split('T')[0],
@@ -91,12 +92,13 @@ export default function DirectPaymentForm() {
       const result = await addDirectPaymentJson(jsonData);
 
       if (result.success) {
-        alert('Direct payment logged successfully! It requires approval from another admin before appearing in the ledger.');
+        alert('Direct transaction logged successfully! It requires approval from another admin before appearing in the ledger.');
         setPaymentData({
           entryDate: new Date().toISOString().split('T')[0],
           billDate: '',
           vendorName: '',
           amount: '',
+          type: 'debit',
           description: '',
           category: '',
           photo: null,
@@ -104,11 +106,11 @@ export default function DirectPaymentForm() {
         setPhotoPreview(null);
         setPhotoBase64(null);
       } else {
-        alert('Failed to log payment: ' + (result.message || 'Unknown error'));
+        alert('Failed to log transaction: ' + (result.message || 'Unknown error'));
       }
 
     } catch (error) {
-      console.error('Error during payment logging:', error);
+      console.error('Error during transaction logging:', error);
       alert('Something went wrong. Please try again later.');
     }
   };
@@ -116,10 +118,10 @@ export default function DirectPaymentForm() {
   return (
     <div className="max-w-lg mx-auto">
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Log Direct Payment</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Log Direct Transaction</h2>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-blue-800">
-            <span className="font-medium">Note:</span> Direct payments require approval from another admin before they appear in the ledger and affect the balance.
+            <span className="font-medium">Note:</span> Direct transactions require approval from another admin before they appear in the ledger and affect the balance. Use Credit for income/offerings and Debit for expenses.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -164,18 +166,33 @@ export default function DirectPaymentForm() {
             />
           </div>
 
-          {/* Amount Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
-            <input
-              type="number"
-              name="amount"
-              placeholder="0.00"
-              value={paymentData.amount}
-              onChange={handleChange}
-              required
-              className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
-            />
+          {/* Amount Input and Transaction Type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+              <input
+                type="number"
+                name="amount"
+                placeholder="0.00"
+                value={paymentData.amount}
+                onChange={handleChange}
+                required
+                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+              <select
+                name="type"
+                value={paymentData.type}
+                onChange={handleChange}
+                required
+                className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+              >
+                <option value="debit">Debit (Expense)</option>
+                <option value="credit">Credit (Income)</option>
+              </select>
+            </div>
           </div>
 
           {/* Category Select */}
@@ -195,6 +212,7 @@ export default function DirectPaymentForm() {
               <option value="Travel">Travel</option>
               <option value="Food">Food</option>
               <option value="Utilities">Utilities</option>
+              <option value="Offering">Offering</option>
               <option value="Other">Other</option>
             </select>
           </div>
@@ -266,7 +284,7 @@ export default function DirectPaymentForm() {
             type="submit"
             className="w-full bg-purple-500 text-white py-4 rounded-xl hover:bg-purple-600 transition font-medium shadow-sm mt-6"
           >
-            Log Direct Payment
+            Log Direct Transaction
           </button>
         </form>
       </div>

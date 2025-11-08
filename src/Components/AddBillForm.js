@@ -332,6 +332,9 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
               <option value="Travel">Travel</option>
               <option value="Food">Food</option>
               <option value="Utilities">Utilities</option>
+              {(user?.role === 'admin' || user?.publicMetadata?.role === 'admin') && (
+                <option value="Offering">Offering</option>
+              )}
               <option value="Other">Other</option>
             </select>
           </div>
