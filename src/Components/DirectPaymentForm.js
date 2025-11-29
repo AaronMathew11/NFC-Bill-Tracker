@@ -235,14 +235,23 @@ export default function DirectPaymentForm() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Receipt/Invoice (Optional)</label>
             <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-gray-300 transition">
+              {/* Hidden inputs for camera and gallery */}
               <input
                 type="file"
                 accept="image/*,application/pdf"
                 capture="environment"
                 onChange={handlePhotoChange}
                 className="hidden"
-                id="payment-photo-upload"
+                id="payment-camera-upload"
               />
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handlePhotoChange}
+                className="hidden"
+                id="payment-gallery-upload"
+              />
+              
               {photoPreview ? (
                 <div className="space-y-3">
                   <img 
@@ -251,8 +260,11 @@ export default function DirectPaymentForm() {
                     className="max-w-full h-32 object-cover rounded-lg mx-auto"
                   />
                   <div className="flex gap-2">
-                    <label htmlFor="payment-photo-upload" className="flex-1 bg-purple-100 text-purple-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-purple-200 transition">
-                      Change Photo
+                    <label htmlFor="payment-camera-upload" className="flex-1 bg-green-100 text-green-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-200 transition">
+                      📷 Take Photo
+                    </label>
+                    <label htmlFor="payment-gallery-upload" className="flex-1 bg-purple-100 text-purple-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-purple-200 transition">
+                      📁 Gallery
                     </label>
                     <button 
                       type="button"
@@ -268,13 +280,21 @@ export default function DirectPaymentForm() {
                   </div>
                 </div>
               ) : (
-                <label htmlFor="payment-photo-upload" className="cursor-pointer">
+                <div>
                   <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
                     <Plus className="w-6 h-6 text-gray-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
-                  <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
-                </label>
+                  <p className="text-sm font-medium text-gray-700 mb-3">Add Receipt/Invoice</p>
+                  <div className="flex gap-3 justify-center">
+                    <label htmlFor="payment-camera-upload" className="bg-green-100 text-green-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-200 transition">
+                      📷 Take Photo
+                    </label>
+                    <label htmlFor="payment-gallery-upload" className="bg-purple-100 text-purple-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-purple-200 transition">
+                      📁 Upload from Gallery
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">JPG, PNG or PDF</p>
+                </div>
               )}
             </div>
           </div>

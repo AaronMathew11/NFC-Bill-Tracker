@@ -356,14 +356,23 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Receipt Photo</label>
             <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-gray-300 transition">
+              {/* Hidden inputs for camera and gallery */}
               <input
                 type="file"
                 accept="image/*"
                 capture="environment"
                 onChange={handlePhotoChange}
                 className="hidden"
-                id="photo-upload"
+                id="camera-upload"
               />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+                id="gallery-upload"
+              />
+              
               {photoPreview ? (
                 <div className="space-y-3">
                   <img 
@@ -372,8 +381,11 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
                     className="max-w-full h-32 object-cover rounded-lg mx-auto"
                   />
                   <div className="flex gap-2">
-                    <label htmlFor="photo-upload" className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-blue-200 transition">
-                      Change Photo
+                    <label htmlFor="camera-upload" className="flex-1 bg-green-100 text-green-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-200 transition">
+                      📷 Take Photo
+                    </label>
+                    <label htmlFor="gallery-upload" className="flex-1 bg-blue-100 text-blue-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-blue-200 transition">
+                      📁 Gallery
                     </label>
                     <button 
                       type="button"
@@ -389,13 +401,21 @@ export default function AddBillForm({ editingBill = null, onSave = null }) {
                   </div>
                 </div>
               ) : (
-                <label htmlFor="photo-upload" className="cursor-pointer">
+                <div>
                   <div className="w-12 h-12 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
                     <Plus className="w-6 h-6 text-gray-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-700">Upload Receipt</p>
-                  <p className="text-xs text-gray-500 mt-1">JPG, PNG or PDF</p>
-                </label>
+                  <p className="text-sm font-medium text-gray-700 mb-3">Add Receipt Photo</p>
+                  <div className="flex gap-3 justify-center">
+                    <label htmlFor="camera-upload" className="bg-green-100 text-green-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-green-200 transition">
+                      📷 Take Photo
+                    </label>
+                    <label htmlFor="gallery-upload" className="bg-blue-100 text-blue-700 py-2 px-4 rounded-lg text-sm font-medium cursor-pointer hover:bg-blue-200 transition">
+                      📁 Upload from Gallery
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">JPG, PNG or PDF</p>
+                </div>
               )}
             </div>
           </div>
