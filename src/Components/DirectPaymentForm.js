@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
 import { addDirectPaymentJson } from '../services/dbService';
 

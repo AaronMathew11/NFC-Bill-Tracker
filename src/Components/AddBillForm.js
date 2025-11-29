@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useUserId } from '../hooks/useUserId';
-import { Plus } from 'lucide-react';
 import Compressor from 'compressorjs';
 import { addBillJson, updateBillContentJson, checkDuplicate } from '../services/dbService';
 
